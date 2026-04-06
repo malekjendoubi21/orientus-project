@@ -3,6 +3,7 @@ package com.example.orientus.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -17,88 +18,79 @@ import java.util.Map;
 @Component
 public class JwtUtil {
 
-    // 🔑 CLÉ SECRÈTE pour signer les JWT
-    // ⚠️ En production, mettre cette clé dans application.properties
-    private final String SECRET_KEY = "orientus_secret_key_2026_very_long_and_secure_key_for_jwt_authentication_system";
+    @Value("${jwt.secret}")
+    private String secretKey;
 
-    // ⏰ DURÉE DE VALIDITÉ du token : 24 heures (en millisecondes)
-    private final long EXPIRATION_TIME = 86400000; // 24h = 24 * 60 * 60 * 1000
-
+    @Value("${jwt.expiration:86400000}")
+    private long expirationTime;
 
     /**
      * Générer la clé secrète à partir du String
      */
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+        return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
-
 
     /**
      * Générer un JWT token pour un utilisateur
      * @param email Email de l'utilisateur
-     * @param role Rôle de l'utilisateur (ADMIN ou STUDENT)
+     * @param role Rôle de l'utilisateur (ADMIN, STUDENT ou OWNER)
      * @return Le JWT token
      */
     public String generateToken(String email, String role) {
-
-        // 📝 Créer les claims (données) du token
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", email);
         claims.put("role", role);
 
-        // 🎫 Générer le token avec la nouvelle API
         return Jwts.builder()
-                .claims(claims)                                      // Données (email, role)
-                .subject(email)                                      // Sujet = email
-                .issuedAt(new Date())                                // Date de création
-                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME)) // Expiration
-                .signWith(getSigningKey())                           // Signature avec la clé secrète
-                .compact();                                          // Générer la chaîne JWT
+                .claims(claims)
+                .subject(email)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expirationTime))
+                .signWith(getSigningKey())
+                .compact();
     }
 
-
     /**
-     * Valider un JWT token
+     * Valider un JWT token (signature + expiration)
      * @param token Le JWT token
      * @return true si valide, false sinon
      */
     public boolean validateToken(String token) {
         try {
             Jwts.parser()
-                    .verifyWith(getSigningKey())  // Vérifier la signature
+                    .verifyWith(getSigningKey())
                     .build()
-                    .parseSignedClaims(token);    // Parser le token
-            return true;                       // Token valide
+                    .parseSignedClaims(token);
+            return true;
         } catch (Exception e) {
-            return false;                      // Token invalide ou expiré
+            return false;
         }
     }
 
+    /**
+     * Alias pour validateToken — utilisé par JwtAuthenticationFilter
+     */
+    public boolean isTokenValid(String token) {
+        return validateToken(token);
+    }
 
     /**
      * Extraire l'email du JWT token
-     * @param token Le JWT token
-     * @return L'email
      */
     public String extractEmail(String token) {
         return extractAllClaims(token).getSubject();
     }
 
-
     /**
      * Extraire le rôle du JWT token
-     * @param token Le JWT token
-     * @return Le rôle (ADMIN ou STUDENT)
      */
     public String extractRole(String token) {
         return (String) extractAllClaims(token).get("role");
     }
 
-
     /**
      * Extraire toutes les données (claims) du JWT token
-     * @param token Le JWT token
-     * @return Les claims
      */
     private Claims extractAllClaims(String token) {
         return Jwts.parser()

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { applicationService } from '../../services/applicationService';
+import { formatDateTime } from '../../utils/formatters';
 import { ApplicationStatus, BUDGET_LABELS, STATUS_LABELS } from '../../models/Application';
 import type { Application } from '../../models/Application';
 
@@ -22,21 +23,23 @@ const ApplicationDetailsPage = () => {
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
     const fetchApplication = async () => {
       if (!id) return;
       setIsLoading(true);
       setError('');
       try {
         const data = await applicationService.getApplicationById(Number(id));
-        setApplication(data);
+        if (!cancelled) setApplication(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load application');
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load application');
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
     fetchApplication();
+    return () => { cancelled = true; };
   }, [id]);
 
   const handleUpdateStatus = async (status: ApplicationStatus) => {
@@ -64,16 +67,6 @@ const ApplicationDetailsPage = () => {
       setError(err instanceof Error ? err.message : 'Failed to delete application');
       setActionLoading(false);
     }
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   };
 
   const containerVariants = {
@@ -127,7 +120,7 @@ const ApplicationDetailsPage = () => {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-white">Détails de la candidature</h1>
-            <p className="text-slate-400 text-sm mt-0.5">#{application.id} — {formatDate(application.applicationDate)}</p>
+            <p className="text-slate-400 text-sm mt-0.5">#{application.id} — {formatDateTime(application.applicationDate)}</p>
           </div>
         </div>
         <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border ${statusBadgeStyles[application.status]}`}>
@@ -345,7 +338,7 @@ const ApplicationDetailsPage = () => {
                 <div className="w-2 h-2 rounded-full bg-violet-500 mt-2 flex-shrink-0" />
                 <div>
                   <p className="text-sm text-white">Candidature soumise</p>
-                  <p className="text-xs text-slate-400">{formatDate(application.applicationDate)}</p>
+                  <p className="text-xs text-slate-400">{formatDateTime(application.applicationDate)}</p>
                 </div>
               </div>
               {application.updatedAt && application.updatedAt !== application.applicationDate && (
@@ -356,7 +349,7 @@ const ApplicationDetailsPage = () => {
                   }`} />
                   <div>
                     <p className="text-sm text-white">Dernière mise à jour</p>
-                    <p className="text-xs text-slate-400">{formatDate(application.updatedAt)}</p>
+                    <p className="text-xs text-slate-400">{formatDateTime(application.updatedAt)}</p>
                   </div>
                 </div>
               )}

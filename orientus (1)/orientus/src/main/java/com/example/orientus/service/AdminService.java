@@ -5,6 +5,7 @@ import com.example.orientus.entity.User;
 import com.example.orientus.enums.UserRole;
 import com.example.orientus.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import java.util.List;
 public class AdminService {
 
     private final UserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     /**
      * Créer un admin (OWNER uniquement)
@@ -38,10 +40,9 @@ public class AdminService {
             throw new RuntimeException("Email already exists");
         }
 
-        // 3. Créer le nouvel admin
         User admin = new User();
         admin.setEmail(request.getEmail());
-        admin.setPassword(request.getPassword()); // TODO: Hash avec BCrypt
+        admin.setPassword(passwordEncoder.encode(request.getPassword()));
         admin.setFirstName(request.getFirstName());
         admin.setLastName(request.getLastName());
         admin.setPhone(request.getPhone());

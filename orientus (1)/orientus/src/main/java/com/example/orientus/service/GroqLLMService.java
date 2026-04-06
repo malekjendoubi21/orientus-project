@@ -5,6 +5,7 @@ import com.example.orientus.dto.SearchCriteria;
 import com.example.orientus.entity.PartnerProgram;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class GroqLLMService {
 
     @Value("${groq.api.key}")
@@ -35,7 +37,7 @@ public class GroqLLMService {
     @Value("${groq.model}")
     private String model;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /** Nombre maximum de messages d'historique envoyés à Groq */

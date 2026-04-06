@@ -1,9 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-
-const WS_URL = 'http://localhost:8084/ws';
-const TOKEN_KEY = 'orientus_token';
+import { WS_URL, TOKEN_KEY } from '../utils/constants';
 
 interface Subscription {
   destination: string;
@@ -51,7 +49,7 @@ export function useWebSocket(userId: number | undefined) {
         connectedRef.current = false;
       },
       onStompError: (frame) => {
-        console.error('STOMP error', frame.headers['message']);
+        if (import.meta.env.DEV) console.error('STOMP error', frame.headers['message']);
       },
     });
 

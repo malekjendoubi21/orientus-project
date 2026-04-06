@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { applicationService } from '../services/applicationService';
 import ApplicationStatusBadge from '../components/ApplicationStatusBadge';
+import { formatDate } from '../utils/formatters';
 import { BUDGET_LABELS } from '../models/Application';
 import type { Application } from '../models/Application';
 
@@ -14,6 +15,7 @@ const StudentApplicationsPage = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
     const fetchApplications = async () => {
       if (!user?.id) return;
 
@@ -21,24 +23,23 @@ const StudentApplicationsPage = () => {
       setError('');
       try {
         const data = await applicationService.getStudentApplications(user.id);
-        setApplications(data.applications);
+        if (!cancelled) {
+          setApplications(data.applications);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load applications');
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load applications');
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchApplications();
+    return () => { cancelled = true; };
   }, [user?.id]);
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-yellow-50 pt-32 pb-12">

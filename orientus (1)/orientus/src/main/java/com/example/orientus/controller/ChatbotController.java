@@ -15,15 +15,9 @@ import java.util.Map;
 
 /**
  * Controller du chatbot
- * Amélioré avec :
- * - Amélioration 1 : Endpoint de bienvenue + suggestions
- * - Amélioration 3 : Support de l'historique via ChatRequest
- * - Amélioration 7 : Endpoint feedback
- * - Amélioration 8 : Endpoint invalidation du cache
  */
 @RestController
 @RequestMapping("/api/chatbot")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 @Slf4j
 public class ChatbotController {
@@ -32,18 +26,13 @@ public class ChatbotController {
     private final ChatFeedbackRepository feedbackRepository;
     private final ChatbotCacheService cacheService;
 
-    // ═══════════════════════════════════════════════════════════════
-    // Amélioration 1 : Endpoint de bienvenue + suggestions
-    // ═══════════════════════════════════════════════════════════════
-
     /**
      * GET /api/chatbot/welcome
-     * Retourne un message de bienvenue et des suggestions de questions
      */
     @GetMapping("/welcome")
     public ResponseEntity<WelcomeResponse> welcome() {
         WelcomeResponse response = WelcomeResponse.builder()
-                .message("👋 Bonjour ! Je suis l'assistant Orientus. Je peux vous aider à trouver des programmes d'études à l'étranger parmi nos universités partenaires. Posez-moi une question !")
+                .message("Bonjour ! Je suis l'assistant Orientus. Je peux vous aider à trouver des programmes d'études à l'étranger parmi nos universités partenaires. Posez-moi une question !")
                 .suggestions(List.of(
                         "Je veux étudier en France",
                         "Programmes Master en IT",
@@ -53,26 +42,14 @@ public class ChatbotController {
                         "Programmes en anglais en Allemagne"
                 ))
                 .build();
-
         return ResponseEntity.ok(response);
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // Amélioration 3 : Endpoint principal avec support historique
-    // ═══════════════════════════════════════════════════════════════
-
     /**
      * POST /api/chatbot/ask
-     * Endpoint principal du chatbot — accepte ChatRequest (avec historique optionnel)
-     * RÉTROCOMPATIBLE : accepte aussi l'ancien format { "question": "..." }
-     *
-     * Body: { "message": "Je veux un master en IA en Espagne", "history": [...] }
-     * OU (ancien format) : { "question": "Je veux un master en IA en Espagne" }
      */
     @PostMapping("/ask")
     public ResponseEntity<ChatbotResponse> ask(@RequestBody Map<String, Object> requestBody) {
-
-        // Rétrocompatibilité : accepter "question" (ancien) ou "message" (nouveau)
         String question = null;
         if (requestBody.containsKey("message")) {
             question = (String) requestBody.get("message");
@@ -80,7 +57,6 @@ public class ChatbotController {
             question = (String) requestBody.get("question");
         }
 
-        // Validation
         if (question == null || question.isBlank()) {
             return ResponseEntity.badRequest().body(
                     ChatbotResponse.builder()
@@ -91,7 +67,6 @@ public class ChatbotController {
             );
         }
 
-        // Amélioration 3 : Extraire l'historique si présent
         List<ChatMessage> history = null;
         if (requestBody.containsKey("history") && requestBody.get("history") instanceof List) {
             try {
@@ -101,60 +76,38 @@ public class ChatbotController {
                         .map(m -> new ChatMessage(m.get("role"), m.get("content")))
                         .toList();
             } catch (Exception e) {
-                log.warn("⚠️ Impossible de parser l'historique : {}", e.getMessage());
+                log.warn("Impossible de parser l'historique : {}", e.getMessage());
             }
         }
 
-        // Traiter la question avec historique
         ChatbotResponse response = chatbotService.handleQuestion(question, history);
-
         return ResponseEntity.ok(response);
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // Amélioration 7 : Endpoint feedback
-    // ═══════════════════════════════════════════════════════════════
-
     /**
      * POST /api/chatbot/feedback
-     * Enregistrer un feedback utilisateur sur une réponse du chatbot
-     * Body: { "messageId": "uuid", "rating": 5, "comment": "Super !" }
      */
     @PostMapping("/feedback")
     public ResponseEntity<Map<String, String>> submitFeedback(@RequestBody FeedbackRequest request) {
-        try {
-            // Validation
-            if (request.getMessageId() == null || request.getMessageId().isBlank()) {
-                return ResponseEntity.badRequest().body(Map.of("message", "messageId is required"));
-            }
-            if (request.getRating() < 1 || request.getRating() > 5) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Rating must be between 1 and 5"));
-            }
-
-            // Sauvegarder le feedback
-            ChatFeedback feedback = new ChatFeedback();
-            feedback.setMessageId(request.getMessageId());
-            feedback.setRating(request.getRating());
-            feedback.setComment(request.getComment());
-            feedbackRepository.save(feedback);
-
-            log.info("📝 Feedback reçu : messageId={}, rating={}", request.getMessageId(), request.getRating());
-
-            return ResponseEntity.ok(Map.of("message", "Feedback enregistré. Merci !"));
-
-        } catch (Exception e) {
-            log.error("❌ Erreur lors de l'enregistrement du feedback : {}", e.getMessage());
-            return ResponseEntity.internalServerError().body(Map.of("message", "Erreur lors de l'enregistrement du feedback"));
+        if (request.getMessageId() == null || request.getMessageId().isBlank()) {
+            throw new RuntimeException("messageId is required");
         }
-    }
+        if (request.getRating() < 1 || request.getRating() > 5) {
+            throw new RuntimeException("Rating must be between 1 and 5");
+        }
 
-    // ═══════════════════════════════════════════════════════════════
-    // Amélioration 8 : Endpoint invalidation du cache
-    // ═══════════════════════════════════════════════════════════════
+        ChatFeedback feedback = new ChatFeedback();
+        feedback.setMessageId(request.getMessageId());
+        feedback.setRating(request.getRating());
+        feedback.setComment(request.getComment());
+        feedbackRepository.save(feedback);
+
+        log.info("Feedback reçu : messageId={}, rating={}", request.getMessageId(), request.getRating());
+        return ResponseEntity.ok(Map.of("message", "Feedback enregistré. Merci !"));
+    }
 
     /**
      * POST /api/chatbot/cache/invalidate
-     * Invalider le cache du chatbot (à appeler après ajout de programmes)
      */
     @PostMapping("/cache/invalidate")
     public ResponseEntity<Map<String, String>> invalidateCache() {
@@ -164,7 +117,6 @@ public class ChatbotController {
 
     /**
      * GET /api/chatbot/cache/stats
-     * Statistiques du cache (pour monitoring)
      */
     @GetMapping("/cache/stats")
     public ResponseEntity<Map<String, Object>> cacheStats() {
@@ -174,12 +126,7 @@ public class ChatbotController {
         ));
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // Endpoint de test (inchangé)
-    // ═══════════════════════════════════════════════════════════════
-
     /**
-     * Endpoint de test
      * GET /api/chatbot/health
      */
     @GetMapping("/health")
@@ -191,3 +138,4 @@ public class ChatbotController {
         ));
     }
 }
+

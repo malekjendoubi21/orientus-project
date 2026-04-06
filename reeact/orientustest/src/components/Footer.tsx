@@ -77,6 +77,7 @@ const Footer = () => {
                   src="/black.png" 
                   alt="Orientus Logo" 
                   className="h-10 w-auto brightness-0 invert"
+                  loading="lazy"
                 />
               </div>
               <p className="text-gray-400 mb-6">

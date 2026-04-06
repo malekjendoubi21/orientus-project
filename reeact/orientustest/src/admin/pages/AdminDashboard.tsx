@@ -24,30 +24,32 @@ const AdminDashboard = () => {
 
   // Fetch admin count for OWNER and application stats
   useEffect(() => {
+    let cancelled = false;
     const fetchData = async () => {
       try {
         const statsData = await applicationService.getStats();
-        setAppStats(statsData);
+        if (!cancelled) setAppStats(statsData);
       } catch {
         // Stats may not be available, silently fail
       }
 
       if (!isOwner || !admin?.email) {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
         return;
       }
 
       try {
         const adminList = await adminService.getAdminList(admin.email);
-        setAdmins(adminList);
+        if (!cancelled) setAdmins(adminList);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load data');
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load data');
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
     fetchData();
+    return () => { cancelled = true; };
   }, [isOwner, admin?.email]);
 
   const containerVariants = {

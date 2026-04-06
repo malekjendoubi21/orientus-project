@@ -1,0 +1,5 @@
+{
+    "password": "Admin123!",
+    "message": "Test admin created",
+    "email": "admin@orientus.com"
+}

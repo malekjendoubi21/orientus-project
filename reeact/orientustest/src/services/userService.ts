@@ -1,34 +1,6 @@
 import axios from 'axios';
-
-// Configuration de l'URL de base de l'API
-const API_BASE_URL = 'http://localhost:8084/api/users';
-
-// Clé pour le localStorage
-const TOKEN_KEY = 'orientus_token';
-const USER_KEY = 'orientus_user';
-
-// Configuration d'axios avec timeout et headers par défaut
-const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// 🔐 Intercepteur pour ajouter automatiquement le token JWT à chaque requête
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+import api from './api';
+import { TOKEN_KEY, USER_KEY } from '../utils/constants';
 
 /**
  * Interface pour la mise à jour du profil
@@ -69,7 +41,7 @@ export const userService = {
   getProfile: async (email: string): Promise<ProfileResponse> => {
     try {
       // GET request without Content-Type header (no body)
-      const response = await axiosInstance.get<ProfileResponse>(`/profile?email=${encodeURIComponent(email)}`, {
+      const response = await api.get<ProfileResponse>(`/users/profile?email=${encodeURIComponent(email)}`, {
         headers: {
           'Content-Type': undefined,
         },
@@ -110,7 +82,7 @@ export const userService = {
         requestBody.password = profileData.password;
       }
 
-      const response = await axiosInstance.put<ProfileResponse>('/profile', requestBody, {
+      const response = await api.put<ProfileResponse>('/users/profile', requestBody, {
         params: { email },
       });
 
@@ -147,7 +119,7 @@ export const userService = {
    */
   deleteAccount: async (email: string): Promise<{ message: string }> => {
     try {
-      const response = await axiosInstance.delete<{ message: string }>(`/profile?email=${encodeURIComponent(email)}`, {
+      const response = await api.delete<{ message: string }>(`/users/profile?email=${encodeURIComponent(email)}`, {
         headers: {
           'Content-Type': undefined,
         },

@@ -1,9 +1,10 @@
 // Service API du chatbot Orientus
 // Gère tous les appels vers le backend chatbot
 
+import { API_BASE_URL } from '../utils/constants';
 import type { ChatbotResponse, WelcomeResponse, ChatMessage } from '../types/chatbot';
 
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8084') + '/api/chatbot';
+const CHATBOT_URL = `${API_BASE_URL}/chatbot`;
 
 // Message de bienvenue par défaut si le backend ne répond pas
 const DEFAULT_WELCOME: WelcomeResponse = {
@@ -21,14 +22,14 @@ const DEFAULT_WELCOME: WelcomeResponse = {
  */
 export async function fetchWelcome(): Promise<WelcomeResponse> {
   try {
-    const response = await fetch(`${API_URL}/welcome`);
+    const response = await fetch(`${CHATBOT_URL}/welcome`);
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
     const data: WelcomeResponse = await response.json();
     return data;
   } catch (error) {
-    console.error('Erreur fetchWelcome:', error);
+    if (import.meta.env.DEV) console.error('Erreur fetchWelcome:', error);
     return DEFAULT_WELCOME;
   }
 }
@@ -46,7 +47,7 @@ export async function sendMessage(
     ? history.slice(-10).map((m) => ({ role: m.role, content: m.content }))
     : [];
 
-  const response = await fetch(`${API_URL}/ask`, {
+  const response = await fetch(`${CHATBOT_URL}/ask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message, question: message, history: formattedHistory }),
@@ -80,7 +81,7 @@ export async function sendFeedback(
   comment?: string
 ): Promise<void> {
   try {
-    const response = await fetch(`${API_URL}/feedback`, {
+    const response = await fetch(`${CHATBOT_URL}/feedback`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messageId, rating, comment }),
@@ -89,7 +90,7 @@ export async function sendFeedback(
       throw new Error(`HTTP ${response.status}`);
     }
   } catch (error) {
-    console.error('Erreur sendFeedback:', error);
+    if (import.meta.env.DEV) console.error('Erreur sendFeedback:', error);
   }
 }
 
@@ -98,7 +99,7 @@ export async function sendFeedback(
  */
 export async function checkHealth(): Promise<boolean> {
   try {
-    const response = await fetch(`${API_URL}/health`);
+    const response = await fetch(`${CHATBOT_URL}/health`);
     return response.ok;
   } catch {
     return false;

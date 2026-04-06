@@ -1,34 +1,6 @@
 import axios from 'axios';
+import api from './api';
 import type { Program, ProgramRequest, ProgramsResponse, ProgramFilters, AllProgramsResponse, FiltersResponse } from '../models/Program';
-
-// Configuration de l'URL de base de l'API
-const API_BASE_URL = 'http://localhost:8084/api';
-
-// Clés pour le localStorage
-const TOKEN_KEY = 'orientus_token';
-
-// Configuration d'axios avec timeout et headers par défaut
-const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 15000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// 🔐 Intercepteur pour ajouter automatiquement le token JWT à chaque requête
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
 /**
  * Service pour la gestion des programmes d'études
@@ -56,7 +28,7 @@ export const programService = {
       if (filters?.language) params.language = filters.language;
       if (filters?.duration) params.duration = filters.duration;
 
-      const response = await axiosInstance.get<ProgramsResponse>('/programs', { params });
+      const response = await api.get<ProgramsResponse>('/programs', { params });
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -78,7 +50,7 @@ export const programService = {
    */
   getProgramById: async (id: number): Promise<Program> => {
     try {
-      const response = await axiosInstance.get<Program>(`/programs/${id}`);
+      const response = await api.get<Program>(`/programs/${id}`);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -103,7 +75,7 @@ export const programService = {
    */
   createProgram: async (programData: ProgramRequest): Promise<Program> => {
     try {
-      const response = await axiosInstance.post<Program>('/programs', programData);
+      const response = await api.post<Program>('/programs', programData);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -129,7 +101,7 @@ export const programService = {
    */
   updateProgram: async (id: number, programData: ProgramRequest): Promise<Program> => {
     try {
-      const response = await axiosInstance.put<Program>(`/programs/${id}`, programData);
+      const response = await api.put<Program>(`/programs/${id}`, programData);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -157,7 +129,7 @@ export const programService = {
    */
   deleteProgram: async (id: number): Promise<void> => {
     try {
-      await axiosInstance.delete(`/programs/${id}`);
+      await api.delete(`/programs/${id}`);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response) {
@@ -203,7 +175,7 @@ export const programService = {
   getCountries: async (): Promise<string[]> => {
     try {
       // Get all programs and extract unique countries
-      const response = await axiosInstance.get<ProgramsResponse>('/programs', {
+      const response = await api.get<ProgramsResponse>('/programs', {
         params: { page: 0, size: 1000 }
       });
       const countries = [...new Set(response.data.programs.map(p => p.country))].filter(Boolean).sort();
@@ -219,7 +191,7 @@ export const programService = {
    */
   getAllPrograms: async (): Promise<AllProgramsResponse | null> => {
     try {
-      const response = await axiosInstance.get<AllProgramsResponse>('/programs/all');
+      const response = await api.get<AllProgramsResponse>('/programs/all');
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
@@ -237,7 +209,7 @@ export const programService = {
    */
   getFiltersMetadata: async (): Promise<FiltersResponse | null> => {
     try {
-      const response = await axiosInstance.get<FiltersResponse>('/programs/filters');
+      const response = await api.get<FiltersResponse>('/programs/filters');
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
@@ -252,7 +224,7 @@ export const programService = {
    */
   healthCheck: async (): Promise<boolean> => {
     try {
-      await axiosInstance.get('/health');
+      await api.get('/health');
       return true;
     } catch {
       return false;

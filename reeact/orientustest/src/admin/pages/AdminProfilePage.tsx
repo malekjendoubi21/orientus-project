@@ -11,21 +11,29 @@ const AdminProfilePage = () => {
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
+    let cancelled = false;
     const fetchProfile = async () => {
       if (!admin?.email) return;
 
       try {
         setIsLoading(true);
         const profileData = await adminService.getAdminProfile(admin.email);
-        setProfile(profileData);
+        if (!cancelled) {
+          setProfile(profileData);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load profile');
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load profile');
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchProfile();
+    return () => { cancelled = true; };
   }, [admin?.email]);
 
   if (isLoading) {

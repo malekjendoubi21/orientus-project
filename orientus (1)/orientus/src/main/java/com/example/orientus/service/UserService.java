@@ -7,6 +7,7 @@ import com.example.orientus.enums.UserRole;
 import com.example.orientus.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     private static final int CODE_EXPIRATION_MINUTES = 15;
 
@@ -42,10 +44,9 @@ public class UserService {
         // Générer un code de vérification à 6 chiffres
         String verificationCode = generateVerificationCode();
 
-        // Créer le nouvel utilisateur
         User user = new User();
         user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword()); // TODO: Hash avec BCrypt
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setPhone(request.getPhone());
@@ -84,13 +85,13 @@ public class UserService {
 
         User user = new User();
         user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setPhone(request.getPhone());
         user.setNationality(request.getNationality());
 
-        // ✅ Rôle ADMIN
+        // Rôle ADMIN
         user.setRole(UserRole.ADMIN);
 
         user.setCreatedAt(LocalDateTime.now());
@@ -152,8 +153,7 @@ public class UserService {
 
         // 5. Mettre à jour le mot de passe seulement s'il est fourni
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
-            user.setPassword(request.getPassword());
-            // TODO: Hasher le mot de passe avec BCrypt (à faire plus tard)
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
         // 6. Sauvegarder et retourner

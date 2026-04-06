@@ -5,6 +5,7 @@ import com.example.orientus.dto.CreateConversationRequest;
 import com.example.orientus.dto.MessageDTO;
 import com.example.orientus.dto.SendMessageRequest;
 import com.example.orientus.service.MessageService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -15,7 +16,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/messages")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 @Slf4j
 public class MessageController {
@@ -25,13 +25,9 @@ public class MessageController {
     // ===== ÉTUDIANT =====
 
     @PostMapping("/conversations")
-    public ResponseEntity<?> createConversation(@RequestParam Long studentId, @RequestBody CreateConversationRequest request) {
-        try {
-            ConversationDTO dto = messageService.createConversation(studentId, request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(dto);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+    public ResponseEntity<?> createConversation(@RequestParam Long studentId, @Valid @RequestBody CreateConversationRequest request) {
+        ConversationDTO dto = messageService.createConversation(studentId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
     @GetMapping("/conversations/student/{studentId}")
@@ -68,38 +64,22 @@ public class MessageController {
 
     @PostMapping("/conversations/{conversationId}/accept")
     public ResponseEntity<?> acceptConversation(@PathVariable Long conversationId, @RequestParam Long adminId) {
-        try {
-            return ResponseEntity.ok(messageService.acceptConversation(conversationId, adminId));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+        return ResponseEntity.ok(messageService.acceptConversation(conversationId, adminId));
     }
 
     @PostMapping("/conversations/{conversationId}/reject")
     public ResponseEntity<?> rejectConversation(@PathVariable Long conversationId, @RequestParam Long adminId) {
-        try {
-            return ResponseEntity.ok(messageService.rejectConversation(conversationId, adminId));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+        return ResponseEntity.ok(messageService.rejectConversation(conversationId, adminId));
     }
 
     @PostMapping("/conversations/{conversationId}/close")
     public ResponseEntity<?> closeConversation(@PathVariable Long conversationId, @RequestParam Long adminId) {
-        try {
-            return ResponseEntity.ok(messageService.closeConversation(conversationId, adminId));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+        return ResponseEntity.ok(messageService.closeConversation(conversationId, adminId));
     }
 
     @PostMapping("/conversations/{conversationId}/transfer")
     public ResponseEntity<?> transferConversation(@PathVariable Long conversationId, @RequestParam Long currentAdminId, @RequestParam Long newAdminId) {
-        try {
-            return ResponseEntity.ok(messageService.transferConversation(conversationId, currentAdminId, newAdminId));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+        return ResponseEntity.ok(messageService.transferConversation(conversationId, currentAdminId, newAdminId));
     }
 
     // ===== MESSAGES =====
@@ -110,13 +90,8 @@ public class MessageController {
     }
 
     @PostMapping("/conversations/{conversationId}/messages")
-    public ResponseEntity<?> sendMessage(@PathVariable Long conversationId, @RequestParam Long senderId, @RequestBody SendMessageRequest request) {
-        try {
-            MessageDTO dto = messageService.sendMessage(conversationId, senderId, request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(dto);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+    public ResponseEntity<?> sendMessage(@PathVariable Long conversationId, @RequestParam Long senderId, @Valid @RequestBody SendMessageRequest request) {
+        MessageDTO dto = messageService.sendMessage(conversationId, senderId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 }
-

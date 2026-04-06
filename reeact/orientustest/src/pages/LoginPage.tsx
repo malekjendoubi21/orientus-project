@@ -67,7 +67,7 @@ const LoginPage = () => {
       navigate('/');
     } catch (error) {
       // ❌ Erreur de connexion
-      console.error('Login error:', error);
+      if (import.meta.env.DEV) console.error('Login error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';
       setErrors({
         general: errorMessage,

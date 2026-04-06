@@ -38,6 +38,22 @@ public class MessageService {
     private static final int MAX_PENDING_CONVERSATIONS = 1;
     private static final int MAX_ACTIVE_CONVERSATIONS = 3;
 
+    // ===========================
+    // Private helper: create and send system message
+    // ===========================
+    private MessageDTO createAndSendSystemMessage(Conversation conversation, User sender, String content) {
+        Message systemMsg = new Message();
+        systemMsg.setConversation(conversation);
+        systemMsg.setSender(sender);
+        systemMsg.setContent(content);
+        systemMsg.setMessageType(MessageType.SYSTEM);
+        systemMsg = messageRepository.save(systemMsg);
+
+        MessageDTO dto = MessageDTO.fromEntity(systemMsg);
+        messagingTemplate.convertAndSend("/topic/conversation/" + conversation.getId(), dto);
+        return dto;
+    }
+
     public ConversationDTO createConversation(Long studentId, CreateConversationRequest request) {
         User student = userRepository.findById(studentId)
             .orElseThrow(() -> new RuntimeException("Student not found"));
@@ -133,14 +149,8 @@ public class MessageService {
         conversation.setAcceptedAt(LocalDateTime.now());
         conversationRepository.save(conversation);
 
-        Message systemMsg = new Message();
-        systemMsg.setConversation(conversation);
-        systemMsg.setSender(admin);
-        systemMsg.setContent("Conversation acceptee par " + admin.getFirstName());
-        systemMsg.setMessageType(MessageType.SYSTEM);
-        messageRepository.save(systemMsg);
+        createAndSendSystemMessage(conversation, admin, "Conversation acceptee par " + admin.getFirstName());
 
-        messagingTemplate.convertAndSend("/topic/conversation/" + conversationId, MessageDTO.fromEntity(systemMsg));
         messagingTemplate.convertAndSend("/topic/student/" + conversation.getStudent().getId() + "/conversation-update",
             ConversationDTO.fromEntity(conversation, 0L));
 
@@ -166,14 +176,7 @@ public class MessageService {
         conversation.setClosedAt(LocalDateTime.now());
         conversationRepository.save(conversation);
 
-        Message systemMsg = new Message();
-        systemMsg.setConversation(conversation);
-        systemMsg.setSender(admin);
-        systemMsg.setContent("Conversation refusee");
-        systemMsg.setMessageType(MessageType.SYSTEM);
-        messageRepository.save(systemMsg);
-
-        messagingTemplate.convertAndSend("/topic/conversation/" + conversationId, MessageDTO.fromEntity(systemMsg));
+        createAndSendSystemMessage(conversation, admin, "Conversation refusee");
 
         messagingEmailService.sendImmediateEmail(conversation.getStudent(), conversation,
             EmailNotificationType.CONVERSATION_REJECTED, admin.getFirstName());
@@ -193,14 +196,7 @@ public class MessageService {
         conversation.setClosedAt(LocalDateTime.now());
         conversationRepository.save(conversation);
 
-        Message systemMsg = new Message();
-        systemMsg.setConversation(conversation);
-        systemMsg.setSender(admin);
-        systemMsg.setContent("Conversation fermee par " + admin.getFirstName());
-        systemMsg.setMessageType(MessageType.SYSTEM);
-        messageRepository.save(systemMsg);
-
-        messagingTemplate.convertAndSend("/topic/conversation/" + conversationId, MessageDTO.fromEntity(systemMsg));
+        createAndSendSystemMessage(conversation, admin, "Conversation fermee par " + admin.getFirstName());
 
         messagingEmailService.sendImmediateEmail(conversation.getStudent(), conversation,
             EmailNotificationType.CONVERSATION_CLOSED, admin.getFirstName());
@@ -219,14 +215,7 @@ public class MessageService {
         conversation.setAssignedAdmin(newAdmin);
         conversationRepository.save(conversation);
 
-        Message systemMsg = new Message();
-        systemMsg.setConversation(conversation);
-        systemMsg.setSender(newAdmin);
-        systemMsg.setContent("Conversation transferee a " + newAdmin.getFirstName());
-        systemMsg.setMessageType(MessageType.SYSTEM);
-        messageRepository.save(systemMsg);
-
-        messagingTemplate.convertAndSend("/topic/conversation/" + conversationId, MessageDTO.fromEntity(systemMsg));
+        createAndSendSystemMessage(conversation, newAdmin, "Conversation transferee a " + newAdmin.getFirstName());
 
         log.info("Conversation {} transferred to admin {}", conversationId, newAdminId);
 

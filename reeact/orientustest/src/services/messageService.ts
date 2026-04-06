@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from './api';
 import type {
   ConversationDTO,
   MessageDTO,
@@ -7,23 +7,6 @@ import type {
   UnreadCountResponse,
 } from '../models/Message';
 
-const API_BASE_URL = 'http://localhost:8084/api';
-const TOKEN_KEY = 'orientus_token';
-
-const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 15000,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem(TOKEN_KEY);
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
 export const messageService = {
   // ─── Conversations ────────────────────────────────────────
 
@@ -31,7 +14,7 @@ export const messageService = {
     studentId: number,
     data: CreateConversationRequest
   ): Promise<ConversationDTO> => {
-    const res = await axiosInstance.post<ConversationDTO>(
+    const res = await api.post<ConversationDTO>(
       `/messages/conversations?studentId=${studentId}`,
       data
     );
@@ -41,7 +24,7 @@ export const messageService = {
   getStudentConversations: async (
     studentId: number
   ): Promise<ConversationDTO[]> => {
-    const res = await axiosInstance.get<ConversationDTO[]>(
+    const res = await api.get<ConversationDTO[]>(
       `/messages/conversations/student/${studentId}`
     );
     return res.data;
@@ -50,14 +33,14 @@ export const messageService = {
   getStudentUnreadCount: async (
     studentId: number
   ): Promise<UnreadCountResponse> => {
-    const res = await axiosInstance.get<UnreadCountResponse>(
+    const res = await api.get<UnreadCountResponse>(
       `/messages/conversations/student/${studentId}/unread`
     );
     return res.data;
   },
 
   getPendingConversations: async (): Promise<ConversationDTO[]> => {
-    const res = await axiosInstance.get<ConversationDTO[]>(
+    const res = await api.get<ConversationDTO[]>(
       `/messages/conversations/pending`
     );
     return res.data;
@@ -66,14 +49,14 @@ export const messageService = {
   getAdminConversations: async (
     adminId: number
   ): Promise<ConversationDTO[]> => {
-    const res = await axiosInstance.get<ConversationDTO[]>(
+    const res = await api.get<ConversationDTO[]>(
       `/messages/conversations/admin/${adminId}`
     );
     return res.data;
   },
 
   getAllConversations: async (): Promise<ConversationDTO[]> => {
-    const res = await axiosInstance.get<ConversationDTO[]>(
+    const res = await api.get<ConversationDTO[]>(
       `/messages/conversations/all`
     );
     return res.data;
@@ -83,7 +66,7 @@ export const messageService = {
     conversationId: number,
     adminId: number
   ): Promise<ConversationDTO> => {
-    const res = await axiosInstance.post<ConversationDTO>(
+    const res = await api.post<ConversationDTO>(
       `/messages/conversations/${conversationId}/accept?adminId=${adminId}`
     );
     return res.data;
@@ -93,7 +76,7 @@ export const messageService = {
     conversationId: number,
     adminId: number
   ): Promise<ConversationDTO> => {
-    const res = await axiosInstance.post<ConversationDTO>(
+    const res = await api.post<ConversationDTO>(
       `/messages/conversations/${conversationId}/reject?adminId=${adminId}`
     );
     return res.data;
@@ -103,7 +86,7 @@ export const messageService = {
     conversationId: number,
     adminId: number
   ): Promise<ConversationDTO> => {
-    const res = await axiosInstance.post<ConversationDTO>(
+    const res = await api.post<ConversationDTO>(
       `/messages/conversations/${conversationId}/close?adminId=${adminId}`
     );
     return res.data;
@@ -114,7 +97,7 @@ export const messageService = {
     currentAdminId: number,
     newAdminId: number
   ): Promise<ConversationDTO> => {
-    const res = await axiosInstance.post<ConversationDTO>(
+    const res = await api.post<ConversationDTO>(
       `/messages/conversations/${conversationId}/transfer?currentAdminId=${currentAdminId}&newAdminId=${newAdminId}`
     );
     return res.data;
@@ -126,7 +109,7 @@ export const messageService = {
     conversationId: number,
     userId: number
   ): Promise<MessageDTO[]> => {
-    const res = await axiosInstance.get<MessageDTO[]>(
+    const res = await api.get<MessageDTO[]>(
       `/messages/conversations/${conversationId}/messages?userId=${userId}`
     );
     return res.data;
@@ -137,7 +120,7 @@ export const messageService = {
     senderId: number,
     data: SendMessageRequest
   ): Promise<MessageDTO> => {
-    const res = await axiosInstance.post<MessageDTO>(
+    const res = await api.post<MessageDTO>(
       `/messages/conversations/${conversationId}/messages?senderId=${senderId}`,
       data
     );

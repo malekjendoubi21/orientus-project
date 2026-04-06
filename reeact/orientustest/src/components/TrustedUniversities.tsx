@@ -114,6 +114,7 @@ const TrustedUniversities = () => {
                     src={uni.logo} 
                     alt={`${uni.name} Logo`}
                     className="max-w-full max-h-full object-contain"
+                    loading="lazy"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                       e.currentTarget.parentElement!.innerHTML = `<div class="text-center"><div class="text-sm font-bold text-gray-400">${uni.name}</div></div>`;

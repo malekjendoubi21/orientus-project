@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           email: response.email!,
           firstName: response.firstName!,
           lastName: response.lastName!,
-          role: response.role! as any,
+          role: response.role as 'STUDENT' | 'ADMIN' | 'OWNER',
         });
       } else {
         throw new Error(response.message || 'Login failed');

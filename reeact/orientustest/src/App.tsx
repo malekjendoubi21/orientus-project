@@ -1,37 +1,39 @@
-import { useEffect } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { AdminAuthProvider } from './admin/contexts/AdminAuthContext';
 import ScrollToTop from './components/ScrollToTop';
 import Navbar from './components/Navbar';
-import Home from './pages/Home';
-import ContactPage from './pages/ContactPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import VerifyEmailPage from './pages/VerifyEmailPage';
-import ProfilePage from './pages/ProfilePage';
-import ProgramsPage from './pages/ProgramsPage';
-import ProgramDetailPage from './pages/ProgramDetailPage';
-import RecommendationsPage from './pages/RecommendationsPage';
 import Footer from './components/Footer';
 import ChatWidget from './components/ChatWidget';
-import { programService } from './services/programService';
-
-// Admin imports
+import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './admin/components/AdminLayout';
 import AdminProtectedRoute from './admin/components/AdminProtectedRoute';
-import AdminLoginPage from './admin/pages/AdminLoginPage';
-import AdminDashboard from './admin/pages/AdminDashboard';
-import AdminProfilePage from './admin/pages/AdminProfilePage';
-import AdminManagementPage from './admin/pages/AdminManagementPage';
-import AdminProgramsPage from './admin/pages/AdminProgramsPage';
-import ApplicationsManagementPage from './admin/pages/ApplicationsManagementPage';
-import ApplicationDetailsPage from './admin/pages/ApplicationDetailsPage';
-import AdminMessagingPage from './admin/pages/AdminMessagingPage';
-import StudentApplicationsPage from './pages/StudentApplicationsPage';
-import MessagesPage from './pages/MessagesPage';
-import ProtectedRoute from './components/ProtectedRoute';
+import { programService } from './services/programService';
+
+// Lazy-loaded pages
+const Home = React.lazy(() => import('./pages/Home'));
+const ContactPage = React.lazy(() => import('./pages/ContactPage'));
+const LoginPage = React.lazy(() => import('./pages/LoginPage'));
+const RegisterPage = React.lazy(() => import('./pages/RegisterPage'));
+const VerifyEmailPage = React.lazy(() => import('./pages/VerifyEmailPage'));
+const ProfilePage = React.lazy(() => import('./pages/ProfilePage'));
+const ProgramsPage = React.lazy(() => import('./pages/ProgramsPage'));
+const ProgramDetailPage = React.lazy(() => import('./pages/ProgramDetailPage'));
+const RecommendationsPage = React.lazy(() => import('./pages/RecommendationsPage'));
+const StudentApplicationsPage = React.lazy(() => import('./pages/StudentApplicationsPage'));
+const MessagesPage = React.lazy(() => import('./pages/MessagesPage'));
+
+// Lazy-loaded admin pages
+const AdminLoginPage = React.lazy(() => import('./admin/pages/AdminLoginPage'));
+const AdminDashboard = React.lazy(() => import('./admin/pages/AdminDashboard'));
+const AdminProfilePage = React.lazy(() => import('./admin/pages/AdminProfilePage'));
+const AdminManagementPage = React.lazy(() => import('./admin/pages/AdminManagementPage'));
+const AdminProgramsPage = React.lazy(() => import('./admin/pages/AdminProgramsPage'));
+const ApplicationsManagementPage = React.lazy(() => import('./admin/pages/ApplicationsManagementPage'));
+const ApplicationDetailsPage = React.lazy(() => import('./admin/pages/ApplicationDetailsPage'));
+const AdminMessagingPage = React.lazy(() => import('./admin/pages/AdminMessagingPage'));
 
 function YellowBanner() {
   const navigate = useNavigate();
@@ -50,6 +52,7 @@ function YellowBanner() {
     <button 
       onClick={goToContact}
       className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 text-gray-900 py-3 px-4 text-center font-semibold shadow-lg fixed top-0 left-0 right-0 z-40 mt-20 md:mt-24 w-full hover:from-yellow-500 hover:via-yellow-600 hover:to-yellow-500 transition-all cursor-pointer"
+      aria-label="Contactez-nous pour commencer vos études à l'étranger"
     >
       <div className="container mx-auto flex items-center justify-center gap-2">
         <svg className="w-5 h-5 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
@@ -116,7 +119,12 @@ function App() {
         <AdminAuthProvider>
           <ScrollToTop />
           <BackendWarmup />
-          <Routes>
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-500"></div>
+            </div>
+          }>
+            <Routes>
             {/* Admin Routes - Separate from public site */}
             <Route path="/admin/login" element={<AdminLoginPage />} />
             <Route
@@ -177,6 +185,7 @@ function App() {
               }
             />
           </Routes>
+          </Suspense>
         </AdminAuthProvider>
       </AuthProvider>
     </Router>

@@ -1,33 +1,5 @@
 import axios from 'axios';
-
-// Configuration de l'URL de base de l'API
-const API_BASE_URL = 'http://localhost:8084/api';
-
-// Clés pour le localStorage
-const TOKEN_KEY = 'orientus_token';
-
-// Configuration d'axios avec timeout et headers par défaut
-const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// 🔐 Intercepteur pour ajouter automatiquement le token JWT à chaque requête
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+import api from './api';
 
 /**
  * Interface pour un Admin
@@ -80,7 +52,7 @@ export const adminService = {
    */
   getAdminList: async (ownerEmail: string): Promise<Admin[]> => {
     try {
-      const response = await axiosInstance.get<Admin[]>('/admin/list', {
+      const response = await api.get<Admin[]>('/admin/list', {
         params: { ownerEmail },
       });
       return response.data;
@@ -105,7 +77,7 @@ export const adminService = {
    */
   createAdmin: async (ownerEmail: string, adminData: CreateAdminRequest): Promise<Admin> => {
     try {
-      const response = await axiosInstance.post<Admin>('/admin/create', adminData, {
+      const response = await api.post<Admin>('/admin/create', adminData, {
         params: { ownerEmail },
       });
       return response.data;
@@ -130,7 +102,7 @@ export const adminService = {
    */
   deleteAdmin: async (adminId: number, ownerEmail: string): Promise<{ message: string }> => {
     try {
-      const response = await axiosInstance.delete<{ message: string }>(`/admin/${adminId}`, {
+      const response = await api.delete<{ message: string }>(`/admin/${adminId}`, {
         params: { ownerEmail },
       });
       return response.data;
@@ -154,7 +126,7 @@ export const adminService = {
    */
   getAdminProfile: async (email: string): Promise<AdminProfileResponse> => {
     try {
-      const response = await axiosInstance.get<AdminProfileResponse>(`/users/profile?email=${encodeURIComponent(email)}`, {
+      const response = await api.get<AdminProfileResponse>(`/users/profile?email=${encodeURIComponent(email)}`, {
         headers: {
           'Content-Type': undefined,
         },

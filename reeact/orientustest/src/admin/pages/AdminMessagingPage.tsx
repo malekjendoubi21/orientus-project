@@ -3,46 +3,9 @@ import { motion } from 'framer-motion';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
 import { messageService } from '../../services/messageService';
 import { useWebSocket } from '../../hooks/useWebSocket';
+import { relativeDate, dateSeparator, timeStr } from '../../utils/formatters';
+import { conversationStatusConfig as statusConfig } from '../../utils/messagingConstants';
 import type { ConversationDTO, MessageDTO } from '../../models/Message';
-
-// ─── Helpers ──────────────────────────────────────────────
-
-function relativeDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return "à l'instant";
-  if (diffMin < 60) return `il y a ${diffMin} min`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `il y a ${diffH}h`;
-  const diffD = Math.floor(diffH / 24);
-  if (diffD === 1) return 'hier';
-  if (diffD < 7) return `il y a ${diffD}j`;
-  return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
-}
-
-function dateSeparator(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const msgDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const diffD = Math.floor((today.getTime() - msgDay.getTime()) / 86400000);
-  if (diffD === 0) return "Aujourd'hui";
-  if (diffD === 1) return 'Hier';
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
-function timeStr(dateStr: string): string {
-  return new Date(dateStr).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-}
-
-const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-  PENDING: { label: 'En attente', color: 'text-amber-400', bg: 'bg-amber-500/20' },
-  ACTIVE: { label: 'Actif', color: 'text-emerald-400', bg: 'bg-emerald-500/20' },
-  REJECTED: { label: 'Refusé', color: 'text-red-400', bg: 'bg-red-500/20' },
-  CLOSED: { label: 'Fermé', color: 'text-slate-400', bg: 'bg-slate-500/20' },
-};
 
 type Tab = 'pending' | 'mine' | 'all';
 

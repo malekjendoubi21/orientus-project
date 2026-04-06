@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { applicationService } from '../../services/applicationService';
+import { formatDateShort } from '../../utils/formatters';
 import { ApplicationStatus, BUDGET_LABELS, STATUS_LABELS } from '../../models/Application';
 import type { Application } from '../../models/Application';
 
@@ -43,7 +44,7 @@ const ApplicationsManagementPage = () => {
       setTotalPages(data.totalPages);
       setTotalItems(data.totalItems);
     } catch (err) {
-      console.error('Error fetching applications:', err);
+      if (import.meta.env.DEV) console.error('Error fetching applications:', err);
       setError(err instanceof Error ? err.message : 'Failed to load applications');
     } finally {
       setIsLoading(false);
@@ -86,14 +87,6 @@ const ApplicationsManagementPage = () => {
     } finally {
       setActionLoading(null);
     }
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
   };
 
   const filteredApplications = applications.filter((app) => {
@@ -204,7 +197,7 @@ const ApplicationsManagementPage = () => {
                 {filteredApplications.map((app) => (
                   <tr key={app.id} className="hover:bg-slate-700/20 transition-colors">
                     <td className="px-6 py-4 text-sm text-slate-300 whitespace-nowrap">
-                      {formatDate(app.applicationDate)}
+                      {formatDateShort(app.applicationDate)}
                     </td>
                     <td className="px-6 py-4">
                       <div>

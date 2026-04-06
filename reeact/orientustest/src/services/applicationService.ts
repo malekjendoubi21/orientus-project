@@ -1,30 +1,7 @@
 import axios from 'axios';
+import api from './api';
 import type { Application, ApplicationRequest, ApplicationsResponse, ApplicationStats } from '../models/Application';
 import type { ApplicationStatus } from '../models/Application';
-
-const API_BASE_URL = 'http://localhost:8084/api/applications';
-const TOKEN_KEY = 'orientus_token';
-
-const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 15000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
 // Normalize paginated response from Spring Boot (content/totalElements) or custom (applications/totalItems)
 function normalizeApplicationsResponse(data: Record<string, unknown>): ApplicationsResponse {
@@ -46,7 +23,7 @@ export const applicationService = {
     data: ApplicationRequest
   ): Promise<{ message: string; application: Application }> => {
     try {
-      const response = await axiosInstance.post('', data, {
+      const response = await api.post('/applications', data, {
         params: { studentId, programId },
       });
       return response.data;
@@ -75,7 +52,7 @@ export const applicationService = {
       const params: Record<string, string | number> = { page, size };
       if (status) params.status = status;
 
-      const response = await axiosInstance.get('', { params });
+      const response = await api.get('/applications', { params });
       return normalizeApplicationsResponse(response.data);
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -95,7 +72,7 @@ export const applicationService = {
    */
   getStudentApplications: async (studentId: number): Promise<ApplicationsResponse> => {
     try {
-      const response = await axiosInstance.get(`/student/${studentId}`);
+      const response = await api.get(`/applications/student/${studentId}`);
       return normalizeApplicationsResponse(response.data);
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -115,7 +92,7 @@ export const applicationService = {
    */
   getApplicationById: async (id: number): Promise<Application> => {
     try {
-      const response = await axiosInstance.get<Application>(`/${id}`);
+      const response = await api.get<Application>(`/applications/${id}`);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -141,7 +118,7 @@ export const applicationService = {
     status: ApplicationStatus
   ): Promise<{ message: string; application: Application }> => {
     try {
-      const response = await axiosInstance.put(`/${id}/status`, null, {
+      const response = await api.put(`/applications/${id}/status`, null, {
         params: { status },
       });
       return response.data;
@@ -163,7 +140,7 @@ export const applicationService = {
    */
   deleteApplication: async (id: number): Promise<{ message: string }> => {
     try {
-      const response = await axiosInstance.delete(`/${id}`);
+      const response = await api.delete(`/applications/${id}`);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -186,7 +163,7 @@ export const applicationService = {
    */
   getStats: async (): Promise<ApplicationStats> => {
     try {
-      const response = await axiosInstance.get<ApplicationStats>('/stats');
+      const response = await api.get<ApplicationStats>('/applications/stats');
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {

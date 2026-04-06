@@ -205,7 +205,7 @@ const AdminProgramsPage = () => {
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
       // Error is handled by the component's error state from React Query
-      console.error('Failed to save program:', err);
+      if (import.meta.env.DEV) console.error('Failed to save program:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -219,7 +219,7 @@ const AdminProgramsPage = () => {
       setDeletingProgramId(null);
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
-      console.error('Failed to delete program:', err);
+      if (import.meta.env.DEV) console.error('Failed to delete program:', err);
     }
   };
 
@@ -753,7 +753,7 @@ const AdminProgramsPage = () => {
                         className="border-2 border-dashed border-slate-600 rounded-lg p-4 text-center cursor-pointer hover:border-violet-500 transition-colors"
                       >
                         {imagePreview ? (
-                          <img src={imagePreview} alt="Preview" className="w-full h-32 object-cover rounded" />
+                          <img src={imagePreview} alt="Preview" className="w-full h-32 object-cover rounded" loading="lazy" />
                         ) : (
                           <div className="py-4">
                             <svg className="w-8 h-8 text-slate-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -781,7 +781,7 @@ const AdminProgramsPage = () => {
                         className="border-2 border-dashed border-slate-600 rounded-lg p-4 text-center cursor-pointer hover:border-violet-500 transition-colors"
                       >
                         {logoPreview ? (
-                          <img src={logoPreview} alt="Logo Preview" className="w-24 h-24 object-contain mx-auto" />
+                          <img src={logoPreview} alt="Logo Preview" className="w-24 h-24 object-contain mx-auto" loading="lazy" />
                         ) : (
                           <div className="py-4">
                             <svg className="w-8 h-8 text-slate-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

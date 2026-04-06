@@ -31,21 +31,29 @@ const AdminManagementPage = () => {
 
   // Fetch admins
   useEffect(() => {
-    fetchAdmins();
+    const signal = { cancelled: false };
+    fetchAdmins(signal);
+    return () => { signal.cancelled = true; };
   }, [admin?.email]);
 
-  const fetchAdmins = async () => {
+  const fetchAdmins = async (signal?: { cancelled: boolean }) => {
     if (!admin?.email) return;
 
     try {
       setIsLoading(true);
       setError('');
       const adminList = await adminService.getAdminList(admin.email);
-      setAdmins(adminList);
+      if (!signal?.cancelled) {
+        setAdmins(adminList);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load admins');
+      if (!signal?.cancelled) {
+        setError(err instanceof Error ? err.message : 'Failed to load admins');
+      }
     } finally {
-      setIsLoading(false);
+      if (!signal?.cancelled) {
+        setIsLoading(false);
+      }
     }
   };
 

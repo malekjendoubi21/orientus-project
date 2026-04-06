@@ -44,29 +44,37 @@ const ProfilePage = () => {
 
   // Fetch profile on mount
   useEffect(() => {
+    let cancelled = false;
     const fetchProfile = async () => {
       if (!user?.email) return;
 
       try {
         setIsLoading(true);
         const profileData = await userService.getProfile(user.email);
-        setProfile(profileData);
-        setFormData({
-          email: profileData.email,
-          firstName: profileData.firstName,
-          lastName: profileData.lastName,
-          phone: profileData.phone || '',
-          nationality: profileData.nationality || '',
-          password: '',
-        });
+        if (!cancelled) {
+          setProfile(profileData);
+          setFormData({
+            email: profileData.email,
+            firstName: profileData.firstName,
+            lastName: profileData.lastName,
+            phone: profileData.phone || '',
+            nationality: profileData.nationality || '',
+            password: '',
+          });
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load profile');
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load profile');
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchProfile();
+    return () => { cancelled = true; };
   }, [user?.email]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

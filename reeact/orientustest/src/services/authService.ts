@@ -1,35 +1,7 @@
 import axios from 'axios';
+import api from './api';
+import { TOKEN_KEY, USER_KEY } from '../utils/constants';
 import type { RegisterRequest, AuthResponse, User } from '../models/User';
-
-// Configuration de l'URL de base de l'API
-const API_BASE_URL = 'http://localhost:8084/api/auth';
-
-// Clés pour le localStorage
-const TOKEN_KEY = 'orientus_token';
-const USER_KEY = 'orientus_user';
-
-// Configuration d'axios avec timeout et headers par défaut
-const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// 🔐 Intercepteur pour ajouter automatiquement le token JWT à chaque requête
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
 /**
  * Service d'authentification pour consommer l'API Spring Boot
@@ -43,7 +15,7 @@ export const authService = {
    */
   login: async (email: string, password: string): Promise<AuthResponse> => {
     try {
-      const response = await axiosInstance.post<AuthResponse>('/login', {
+      const response = await api.post<AuthResponse>('/auth/login', {
         email,
         password,
       });
@@ -81,7 +53,7 @@ export const authService = {
    */
   register: async (registerData: RegisterRequest): Promise<AuthResponse> => {
     try {
-      const response = await axiosInstance.post<AuthResponse>('/register', registerData);
+      const response = await api.post<AuthResponse>('/auth/register', registerData);
       
       // ✅ Sauvegarder le token et les infos utilisateur si l'inscription retourne un token
       if (response.data.token) {
@@ -154,7 +126,7 @@ export const authService = {
    */
   verifyEmail: async (email: string, code: string): Promise<{ message: string }> => {
     try {
-      const response = await axiosInstance.post<{ message: string }>('/verify', { email, code });
+      const response = await api.post<{ message: string }>('/auth/verify', { email, code });
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -174,7 +146,7 @@ export const authService = {
    */
   resendCode: async (email: string): Promise<{ message: string }> => {
     try {
-      const response = await axiosInstance.post<{ message: string }>('/resend-code', { email });
+      const response = await api.post<{ message: string }>('/auth/resend-code', { email });
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
