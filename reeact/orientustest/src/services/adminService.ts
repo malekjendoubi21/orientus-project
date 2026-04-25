@@ -16,6 +16,20 @@ export interface Admin {
 }
 
 /**
+ * Interface pour un Student
+ */
+export interface Student {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  nationality?: string;
+  role: string;
+  createdAt?: string;
+}
+
+/**
  * Interface pour créer un Admin
  */
 export interface CreateAdminRequest {
@@ -144,6 +158,49 @@ export const adminService = {
       throw new Error('An unexpected error occurred while fetching profile');
     }
   },
+
+  /**
+   * 🎓 Récupérer la liste des étudiants (ADMIN/OWNER)
+   * @returns Promise<Student[]>
+   */
+  getStudentList: async (): Promise<Student[]> => {
+    try {
+      const response = await api.get<Student[]>('/admin/students');
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          throw new Error(error.response.data.message || 'Failed to fetch student list');
+        }
+        if (error.request) {
+          throw new Error('Unable to reach the server. Please check your connection.');
+        }
+      }
+      throw new Error('An unexpected error occurred while fetching student list');
+    }
+  },
+
+  /**
+   * 🔢 Récupérer le nombre total d'étudiants (ADMIN/OWNER)
+   * @returns Promise<number>
+   */
+  getStudentCount: async (): Promise<number> => {
+    try {
+      const response = await api.get<{ count: number }>('/admin/students/count');
+      return response.data.count;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          throw new Error(error.response.data.message || 'Failed to fetch student count');
+        }
+        if (error.request) {
+          throw new Error('Unable to reach the server. Please check your connection.');
+        }
+      }
+      throw new Error('An unexpected error occurred while fetching student count');
+    }
+  },
 };
 
 export default adminService;
+

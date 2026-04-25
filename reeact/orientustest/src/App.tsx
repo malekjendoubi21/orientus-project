@@ -24,6 +24,8 @@ const ProgramDetailPage = React.lazy(() => import('./pages/ProgramDetailPage'));
 const RecommendationsPage = React.lazy(() => import('./pages/RecommendationsPage'));
 const StudentApplicationsPage = React.lazy(() => import('./pages/StudentApplicationsPage'));
 const MessagesPage = React.lazy(() => import('./pages/MessagesPage'));
+const ForgotPasswordPage = React.lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage = React.lazy(() => import('./pages/ResetPasswordPage'));
 
 // Lazy-loaded admin pages
 const AdminLoginPage = React.lazy(() => import('./admin/pages/AdminLoginPage'));
@@ -34,6 +36,7 @@ const AdminProgramsPage = React.lazy(() => import('./admin/pages/AdminProgramsPa
 const ApplicationsManagementPage = React.lazy(() => import('./admin/pages/ApplicationsManagementPage'));
 const ApplicationDetailsPage = React.lazy(() => import('./admin/pages/ApplicationDetailsPage'));
 const AdminMessagingPage = React.lazy(() => import('./admin/pages/AdminMessagingPage'));
+const AdminStudentsPage = React.lazy(() => import('./admin/pages/AdminStudentsPage'));
 
 function YellowBanner() {
   const navigate = useNavigate();
@@ -44,7 +47,7 @@ function YellowBanner() {
   };
 
   // Don't show banner on auth pages or admin pages
-  if (location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/verify-email' || location.pathname.startsWith('/admin')) {
+  if (location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/verify-email' || location.pathname === '/forgot-password' || location.pathname === '/reset-password' || location.pathname.startsWith('/admin')) {
     return null;
   }
 
@@ -136,6 +139,7 @@ function App() {
               }
             >
               <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="students" element={<AdminStudentsPage />} />
               <Route path="programs" element={<AdminProgramsPage />} />
               <Route path="applications" element={<ApplicationsManagementPage />} />
               <Route path="applications/:id" element={<ApplicationDetailsPage />} />
@@ -167,6 +171,8 @@ function App() {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/verify-email" element={<VerifyEmailPage />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="/reset-password" element={<ResetPasswordPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/my-applications" element={
                       <ProtectedRoute requiredRole="STUDENT">

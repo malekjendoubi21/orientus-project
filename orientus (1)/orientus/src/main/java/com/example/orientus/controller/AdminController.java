@@ -81,4 +81,38 @@ public class AdminController {
         adminService.deleteAdmin(ownerEmail, adminId);
         return ResponseEntity.ok(Map.of("message", "Admin deleted successfully"));
     }
+
+    /**
+     * GET /api/admin/students
+     * Liste de tous les étudiants (ADMIN ou OWNER)
+     */
+    @GetMapping("/students")
+    public ResponseEntity<?> getAllStudents() {
+        List<User> students = adminService.getAllStudents();
+
+        List<Map<String, Object>> response = students.stream().map(student -> {
+            Map<String, Object> studentData = new HashMap<>();
+            studentData.put("id", student.getId());
+            studentData.put("email", student.getEmail());
+            studentData.put("firstName", student.getFirstName());
+            studentData.put("lastName", student.getLastName());
+            studentData.put("phone", student.getPhone());
+            studentData.put("nationality", student.getNationality());
+            studentData.put("role", student.getRole().name());
+            studentData.put("createdAt", student.getCreatedAt());
+            return studentData;
+        }).toList();
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * GET /api/admin/students/count
+     * Nombre total d'étudiants (ADMIN ou OWNER)
+     */
+    @GetMapping("/students/count")
+    public ResponseEntity<?> getStudentCount() {
+        long count = adminService.getStudentCount();
+        return ResponseEntity.ok(Map.of("count", count));
+    }
 }

@@ -234,6 +234,74 @@ public class UserService {
         log.info("📧 Nouveau code de vérification envoyé à : {}", email);
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // 🔒 MÉTHODES DE RÉINITIALISATION DE MOT DE PASSE
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Demander la réinitialisation du mot de passe
+     * Génère un code de vérification et l'envoie par email
+     * @param email Email de l'utilisateur
+     */
+    public void forgotPassword(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("No account found with this email address."));
+
+        // Générer un code de réinitialisation
+        String resetCode = generateVerificationCode();
+        user.setVerificationCode(resetCode);
+        user.setCodeExpirationTime(LocalDateTime.now().plusMinutes(CODE_EXPIRATION_MINUTES));
+        userRepository.save(user);
+
+        // Envoyer l'email de réinitialisation
+        try {
+            emailService.sendPasswordResetEmail(email, resetCode);
+            log.info("📧 Code de réinitialisation envoyé à : {}", email);
+        } catch (Exception e) {
+            log.warn("⚠️ Email de réinitialisation non envoyé à {} — Erreur: {}", email, e.getMessage());
+            throw new RuntimeException("Failed to send password reset email. Please try again later.");
+        }
+    }
+
+    /**
+     * Réinitialiser le mot de passe avec le code de vérification
+     * @param email Email de l'utilisateur
+     * @param code Code de vérification reçu par email
+     * @param newPassword Nouveau mot de passe
+     */
+    public void resetPassword(String email, String code, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("No account found with this email address."));
+
+        // Vérifier si un code existe
+        if (user.getVerificationCode() == null) {
+            throw new RuntimeException("No password reset was requested. Please request a new code.");
+        }
+
+        // Vérifier si le code a expiré
+        if (user.getCodeExpirationTime() == null || LocalDateTime.now().isAfter(user.getCodeExpirationTime())) {
+            throw new RuntimeException("Verification code has expired. Please request a new one.");
+        }
+
+        // Vérifier si le code est correct
+        if (!code.equals(user.getVerificationCode())) {
+            throw new RuntimeException("Invalid verification code.");
+        }
+
+        // Valider le nouveau mot de passe
+        if (newPassword == null || newPassword.trim().length() < 6) {
+            throw new RuntimeException("Password must be at least 6 characters.");
+        }
+
+        // ✅ Mettre à jour le mot de passe et invalider le code (single-use)
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setVerificationCode(null);
+        user.setCodeExpirationTime(null);
+        userRepository.save(user);
+
+        log.info("✅ Mot de passe réinitialisé pour : {}", email);
+    }
+
     /**
      * Générer un code de vérification aléatoire à 6 chiffres
      * @return Code à 6 chiffres sous forme de String

@@ -160,6 +160,53 @@ export const authService = {
       throw new Error('An unexpected error occurred while resending code');
     }
   },
+
+  /**
+   * 🔒 Demander la réinitialisation du mot de passe
+   * @param email - Email de l'utilisateur
+   * @returns Promise<{ message: string }>
+   */
+  forgotPassword: async (email: string): Promise<{ message: string }> => {
+    try {
+      const response = await api.post<{ message: string }>('/auth/forgot-password', { email });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          throw new Error(error.response.data.message || 'Failed to send reset code');
+        }
+        if (error.request) {
+          throw new Error('Unable to reach the server. Please check your connection.');
+        }
+      }
+      throw new Error('An unexpected error occurred while requesting password reset');
+    }
+  },
+
+  /**
+   * 🔑 Réinitialiser le mot de passe avec le code de vérification
+   * @param email - Email de l'utilisateur
+   * @param code - Code de vérification à 6 chiffres
+   * @param newPassword - Nouveau mot de passe
+   * @returns Promise<{ message: string }>
+   */
+  resetPassword: async (email: string, code: string, newPassword: string): Promise<{ message: string }> => {
+    try {
+      const response = await api.post<{ message: string }>('/auth/reset-password', { email, code, newPassword });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          throw new Error(error.response.data.message || 'Failed to reset password');
+        }
+        if (error.request) {
+          throw new Error('Unable to reach the server. Please check your connection.');
+        }
+      }
+      throw new Error('An unexpected error occurred while resetting password');
+    }
+  },
 };
 
 export default authService;
+

@@ -98,4 +98,20 @@ public class AdminService {
                 .map(user -> user.getRole() == UserRole.OWNER)
                 .orElse(false);
     }
+
+    /**
+     * Liste de tous les étudiants
+     * @return Liste des utilisateurs ayant le rôle STUDENT
+     */
+    public List<User> getAllStudents() {
+        return userRepository.findByRole(UserRole.STUDENT);
+    }
+
+    /**
+     * Compter le nombre d'étudiants
+     * @return Nombre d'utilisateurs ayant le rôle STUDENT
+     */
+    public long getStudentCount() {
+        return userRepository.countByRole(UserRole.STUDENT);
+    }
 }

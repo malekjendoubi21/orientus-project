@@ -83,6 +83,26 @@ public class AuthController {
     }
 
     /**
+     * POST /api/auth/forgot-password
+     * Demander la réinitialisation du mot de passe
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        userService.forgotPassword(request.getEmail());
+        return ResponseEntity.ok(Map.of("message", "A password reset code has been sent to your email."));
+    }
+
+    /**
+     * POST /api/auth/reset-password
+     * Réinitialiser le mot de passe avec le code de vérification
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        userService.resetPassword(request.getEmail(), request.getCode(), request.getNewPassword());
+        return ResponseEntity.ok(Map.of("message", "Password has been reset successfully. You can now log in with your new password."));
+    }
+
+    /**
      * GET /api/auth/test
      */
     @GetMapping("/test")

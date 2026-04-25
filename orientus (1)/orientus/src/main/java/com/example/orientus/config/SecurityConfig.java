@@ -31,11 +31,11 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // Public
-                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/verify", "/api/auth/resend-code", "/api/auth/test").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/verify", "/api/auth/resend-code", "/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/test").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/programs/**").permitAll()
                 .requestMatchers("/api/recommendations/**").permitAll()
                 .requestMatchers("/api/chatbot/**").permitAll()
-                .requestMatchers("/ws/**").permitAll()
+                .requestMatchers("/ws/**").permitAll()  
                 .requestMatchers("/api/health/**").permitAll()
 
                 // Admin only

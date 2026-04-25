@@ -13,14 +13,7 @@ const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [appStats, setAppStats] = useState<ApplicationStats | null>(null);
-
-  // Stats (you can replace with real API calls later)
-  const [stats] = useState([
-    { label: 'Total Users', value: '1,234', icon: '👥', color: 'from-violet-500 to-purple-600' },
-    { label: 'Active Sessions', value: '56', icon: '🔥', color: 'from-orange-500 to-red-600' },
-    { label: 'New Registrations', value: '89', icon: '📈', color: 'from-emerald-500 to-teal-600' },
-    { label: 'Pending Requests', value: '12', icon: '📋', color: 'from-blue-500 to-cyan-600' },
-  ]);
+  const [studentCount, setStudentCount] = useState<number | null>(null);
 
   // Fetch admin count for OWNER and application stats
   useEffect(() => {
@@ -31,6 +24,14 @@ const AdminDashboard = () => {
         if (!cancelled) setAppStats(statsData);
       } catch {
         // Stats may not be available, silently fail
+      }
+
+      // Fetch dynamic student count
+      try {
+        const count = await adminService.getStudentCount();
+        if (!cancelled) setStudentCount(count);
+      } catch {
+        // Student count may not be available, silently fail
       }
 
       if (!isOwner || !admin?.email) {
@@ -97,26 +98,25 @@ const AdminDashboard = () => {
         </div>
       </motion.div>
 
-      {/* Stats Grid */}
+      {/* Total Users Widget */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <motion.div
-            key={stat.label}
-            variants={itemVariants}
-            whileHover={{ scale: 1.02 }}
-            className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-400 text-sm">{stat.label}</p>
-                <p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
-              </div>
-              <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center text-2xl`}>
-                {stat.icon}
-              </div>
+        <motion.div
+          variants={itemVariants}
+          whileHover={{ scale: 1.02 }}
+          className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-slate-400 text-sm">Total Users</p>
+              <p className="text-2xl font-bold text-white mt-1">
+                {studentCount !== null ? studentCount.toLocaleString() : '...'}
+              </p>
             </div>
-          </motion.div>
-        ))}
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-2xl">
+              👥
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* Admin Count Card (OWNER only) */}
@@ -193,7 +193,7 @@ const AdminDashboard = () => {
       <motion.div variants={itemVariants} className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
         <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <button className="flex items-center space-x-3 p-4 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors text-left">
+          <Link to="/admin/students" className="flex items-center space-x-3 p-4 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors text-left">
             <div className="w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center">
               <svg className="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -203,7 +203,7 @@ const AdminDashboard = () => {
               <p className="text-white font-medium">View Users</p>
               <p className="text-slate-400 text-sm">Manage all users</p>
             </div>
-          </button>
+          </Link>
 
           <button className="flex items-center space-x-3 p-4 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors text-left">
             <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">

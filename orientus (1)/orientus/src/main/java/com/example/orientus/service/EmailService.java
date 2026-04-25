@@ -50,5 +50,34 @@ public class EmailService {
             throw new RuntimeException("Failed to send verification email. Please try again later.");
         }
     }
-}
 
+    /**
+     * Envoyer un email de réinitialisation de mot de passe avec un code à 6 chiffres
+     * @param toEmail Email du destinataire
+     * @param code Code de vérification à 6 chiffres
+     */
+    public void sendPasswordResetEmail(String toEmail, String code) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject("Orientus - Réinitialisation de votre mot de passe");
+            message.setText(
+                    "Bonjour,\n\n"
+                    + "Vous avez demandé la réinitialisation de votre mot de passe.\n\n"
+                    + "Votre code de vérification est : " + code + "\n\n"
+                    + "Ce code expire dans 15 minutes.\n\n"
+                    + "Si vous n'avez pas demandé cette réinitialisation, veuillez ignorer cet email.\n\n"
+                    + "Cordialement,\n"
+                    + "L'équipe Orientus"
+            );
+
+            mailSender.send(message);
+            log.info("✅ Email de réinitialisation envoyé à : {}", toEmail);
+
+        } catch (Exception e) {
+            log.error("❌ Erreur lors de l'envoi de l'email de réinitialisation à {} : {}", toEmail, e.getMessage());
+            throw new RuntimeException("Failed to send password reset email. Please try again later.");
+        }
+    }
+}
