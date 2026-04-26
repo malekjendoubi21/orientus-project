@@ -37,6 +37,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/chatbot/**").permitAll()
                 .requestMatchers("/ws/**").permitAll()  
                 .requestMatchers("/api/health/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/contact/offices/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/contact/send").permitAll()
+
+                // Contact admin
+                .requestMatchers("/api/contact/admin/**").hasAnyRole("ADMIN", "OWNER")
 
                 // Admin only
                 .requestMatchers(HttpMethod.POST, "/api/programs/**").hasAnyRole("ADMIN", "OWNER")

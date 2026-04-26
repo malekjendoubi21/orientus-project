@@ -37,6 +37,7 @@ const ApplicationsManagementPage = React.lazy(() => import('./admin/pages/Applic
 const ApplicationDetailsPage = React.lazy(() => import('./admin/pages/ApplicationDetailsPage'));
 const AdminMessagingPage = React.lazy(() => import('./admin/pages/AdminMessagingPage'));
 const AdminStudentsPage = React.lazy(() => import('./admin/pages/AdminStudentsPage'));
+const AdminOfficesPage = React.lazy(() => import('./admin/pages/AdminOfficesPage'));
 
 function YellowBanner() {
   const navigate = useNavigate();
@@ -144,6 +145,7 @@ function App() {
               <Route path="applications" element={<ApplicationsManagementPage />} />
               <Route path="applications/:id" element={<ApplicationDetailsPage />} />
               <Route path="messaging" element={<AdminMessagingPage />} />
+              <Route path="offices" element={<AdminOfficesPage />} />
               <Route path="profile" element={<AdminProfilePage />} />
               <Route
                 path="manage-admins"
