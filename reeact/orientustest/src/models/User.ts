@@ -14,6 +14,7 @@ export interface User {
   phone?: string;
   nationality: string;
   role: UserRole;
+  profilePicture?: string;
   createdAt: string;
 }
 
@@ -33,5 +34,6 @@ export interface AuthResponse {
   firstName: string | null;
   lastName: string | null;
   role: string | null;
+  profilePicture?: string;
   message: string;
 }

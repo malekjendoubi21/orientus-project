@@ -161,6 +161,27 @@ public class UserService {
     }
 
     /**
+     * Mettre à jour l'image de profil d'un utilisateur
+     */
+    public User updateProfilePicture(String email, org.springframework.web.multipart.MultipartFile file) throws java.io.IOException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        String uploadDir = "uploads/avatars/";
+        java.io.File directory = new java.io.File(uploadDir);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+        
+        String fileName = user.getId() + "_" + file.getOriginalFilename();
+        java.nio.file.Path filePath = java.nio.file.Paths.get(uploadDir, fileName);
+        java.nio.file.Files.write(filePath, file.getBytes());
+        
+        user.setProfilePicture("/uploads/avatars/" + fileName);
+        return userRepository.save(user);
+    }
+
+    /**
      * Supprimer un utilisateur par son email
      * @param email Email de l'utilisateur à supprimer
      */

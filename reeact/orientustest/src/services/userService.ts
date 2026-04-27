@@ -25,6 +25,7 @@ export interface ProfileResponse {
   phone?: string;
   nationality?: string;
   role: string;
+  profilePicture?: string;
   createdAt?: string;
   message?: string;
 }
@@ -94,6 +95,7 @@ export const userService = {
           firstName: response.data.firstName,
           lastName: response.data.lastName,
           role: response.data.role,
+          profilePicture: response.data.profilePicture,
         };
         localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
       }
@@ -140,6 +142,34 @@ export const userService = {
         }
       }
       throw new Error('An unexpected error occurred while deleting account');
+    }
+  },
+
+  /**
+   * 🖼️ Uploader un avatar
+   */
+  uploadAvatar: async (email: string, file: File): Promise<{ message: string; profilePicture: string }> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await api.post<{ message: string; profilePicture: string }>(`/users/profile/avatar`, formData, {
+        params: { email },
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      // Update local storage
+      const userStr = localStorage.getItem(USER_KEY);
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        user.profilePicture = response.data.profilePicture;
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+      }
+
+      return response.data;
+    } catch (error) {
+      throw new Error('Failed to upload avatar');
     }
   },
 };

@@ -1,28 +1,41 @@
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import studentImage from '../assets/mohamed.jpg';
+import { CATEGORY_LABELS } from '../models/Program';
+import { programService } from '../services/programService';
 
 const Hero = () => {
+  const navigate = useNavigate();
   const [selectedDomain, setSelectedDomain] = useState('');
   const [selectedDestination, setSelectedDestination] = useState('');
+  const [destinations, setDestinations] = useState<string[]>([]);
 
-  const domains = [
-    'Business & Management',
-    'Engineering',
-    'Medicine & Health',
-    'Computer Science',
-    'Arts & Design',
-    'Law',
-  ];
+  useEffect(() => {
+    const fetchDestinations = async () => {
+      try {
+        const metadata = await programService.getFiltersMetadata();
+        if (metadata && metadata.countries.length > 0) {
+          setDestinations(metadata.countries);
+        } else {
+          const countries = await programService.getCountries();
+          setDestinations(countries);
+        }
+      } catch {
+        // Ignore errors, we'll just have an empty list
+      }
+    };
+    fetchDestinations();
+  }, []);
 
-  const destinations = [
-    'United States',
-    'United Kingdom',
-    'Canada',
-    'Australia',
-    'Germany',
-    'France',
-  ];
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (selectedDomain) params.append('category', selectedDomain);
+    if (selectedDestination) params.append('country', selectedDestination);
+    navigate(`/programs?${params.toString()}`);
+  };
+
+
 
   return (
     <section className="relative min-h-screen flex items-center pt-32 overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100">
@@ -80,9 +93,9 @@ const Hero = () => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">Select domain</option>
-                    {domains.map((domain) => (
-                      <option key={domain} value={domain}>
-                        {domain}
+                    {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                      <option key={key} value={key}>
+                        {label}
                       </option>
                     ))}
                   </select>
@@ -112,6 +125,7 @@ const Hero = () => {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+                onClick={handleSearch}
                 className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 rounded-lg font-semibold text-lg shadow-lg hover:shadow-xl transition-all"
               >
                 Search Programs
@@ -129,9 +143,9 @@ const Hero = () => {
             <div className="relative">
               {/* Student Success Image */}
               <div className="w-full h-[500px] rounded-3xl shadow-2xl overflow-hidden">
-                <img 
-                  src={studentImage} 
-                  alt="Student Success" 
+                <img
+                  src={studentImage}
+                  alt="Student Success"
                   className="w-full h-full object-cover"
                 />
               </div>

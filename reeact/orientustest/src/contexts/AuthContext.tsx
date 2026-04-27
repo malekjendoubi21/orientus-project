@@ -9,6 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  updateUser: (data: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,6 +51,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           firstName: response.firstName!,
           lastName: response.lastName!,
           role: response.role as 'STUDENT' | 'ADMIN' | 'OWNER',
+          profilePicture: response.profilePicture,
         });
       } else {
         throw new Error(response.message || 'Login failed');
@@ -67,12 +69,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setUser(null);
   };
 
+  const updateUser = (data: Partial<User>) => {
+    setUser(prev => prev ? { ...prev, ...data } : null);
+  };
+
   const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
     isLoading,
     login,
     logout,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

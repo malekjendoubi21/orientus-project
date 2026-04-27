@@ -31,6 +31,9 @@ public class LoginResponse {
     // 🎭 Rôle (ADMIN ou STUDENT)
     private String role;
 
+    // 🖼️ Image de profil
+    private String profilePicture;
+
     // 💬 Message de confirmation
     private String message;
 }

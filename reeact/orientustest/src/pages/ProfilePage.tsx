@@ -7,7 +7,7 @@ import type { UpdateProfileRequest, ProfileResponse } from '../services/userServ
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, updateUser } = useAuth();
 
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -122,6 +122,13 @@ const ProfilePage = () => {
     try {
       const updatedProfile = await userService.updateProfile(profile.email, formData);
       setProfile(updatedProfile);
+      
+      // Update global context
+      updateUser({
+        firstName: updatedProfile.firstName,
+        lastName: updatedProfile.lastName,
+      });
+
       setIsEditing(false);
       setSuccess('Profile updated successfully!');
       setFormData(prev => ({ ...prev, password: '' }));
@@ -164,6 +171,26 @@ const ProfilePage = () => {
     setError('');
   };
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0] && profile?.email) {
+      try {
+        setIsLoading(true);
+        const file = e.target.files[0];
+        const result = await userService.uploadAvatar(profile.email, file);
+        setProfile(prev => prev ? { ...prev, profilePicture: result.profilePicture } : prev);
+        
+        // Update global context so the Navbar updates instantly
+        updateUser({ profilePicture: result.profilePicture });
+        
+        setSuccess('Profile picture updated successfully!');
+      } catch (err) {
+        setError('Failed to upload profile picture');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 pt-32">
@@ -194,11 +221,23 @@ const ProfilePage = () => {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: 'spring' }}
-              className="mx-auto h-20 w-20 bg-gradient-to-r from-blue-600 to-blue-800 rounded-full flex items-center justify-center mb-4"
+              className="mx-auto relative h-20 w-20 mb-4 group"
             >
-              <span className="text-3xl font-bold text-white">
-                {profile?.firstName?.charAt(0)}{profile?.lastName?.charAt(0)}
-              </span>
+              {profile?.profilePicture ? (
+                <img src={`http://localhost:8084${profile.profilePicture}`} alt="Profile" className="h-20 w-20 rounded-full object-cover shadow-lg" />
+              ) : (
+                <div className="h-20 w-20 bg-gradient-to-r from-blue-600 to-blue-800 rounded-full flex items-center justify-center shadow-lg">
+                  <span className="text-3xl font-bold text-white">
+                    {profile?.firstName?.charAt(0)}{profile?.lastName?.charAt(0)}
+                  </span>
+                </div>
+              )}
+              {isEditing && (
+                <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                </label>
+              )}
             </motion.div>
             <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
             <p className="text-gray-500 mt-2">Manage your account information</p>

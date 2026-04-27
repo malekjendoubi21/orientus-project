@@ -29,6 +29,7 @@ export const authService = {
           firstName: response.data.firstName,
           lastName: response.data.lastName,
           role: response.data.role,
+          profilePicture: response.data.profilePicture,
         }));
       }
 
@@ -64,6 +65,7 @@ export const authService = {
           firstName: response.data.firstName,
           lastName: response.data.lastName,
           role: response.data.role,
+          profilePicture: response.data.profilePicture,
         }));
       }
 

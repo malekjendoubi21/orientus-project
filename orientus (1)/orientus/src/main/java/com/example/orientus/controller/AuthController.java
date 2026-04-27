@@ -31,7 +31,7 @@ public class AuthController {
         User user = userService.registerStudent(request);
         AuthResponse response = new AuthResponse(
                 user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(),
-                user.getRole().name(),
+                user.getRole().name(), user.getProfilePicture(),
                 "Student registered successfully. Please check your email for the verification code."
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -46,7 +46,7 @@ public class AuthController {
         User user = authService.getUserByEmail(request.getEmail());
         LoginResponse response = new LoginResponse(
                 token, user.getId(), user.getEmail(), user.getFirstName(),
-                user.getLastName(), user.getRole().name(), "Login successful"
+                user.getLastName(), user.getRole().name(), user.getProfilePicture(), "Login successful"
         );
         return ResponseEntity.ok(response);
     }
@@ -59,7 +59,7 @@ public class AuthController {
         User user = userService.createAdmin(request);
         AuthResponse response = new AuthResponse(
                 user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(),
-                user.getRole().name(), "Admin created successfully"
+                user.getRole().name(), user.getProfilePicture(), "Admin created successfully"
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

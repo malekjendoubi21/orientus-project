@@ -28,6 +28,9 @@ public class AuthResponse {
     // 🎭 Rôle (ADMIN ou STUDENT)
     private String role;
 
+    // 🖼️ Image de profil
+    private String profilePicture;
+
     // 💬 Message de confirmation ou d'erreur
     private String message;
 

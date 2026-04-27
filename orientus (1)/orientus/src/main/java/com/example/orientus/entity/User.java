@@ -47,5 +47,8 @@ public class User {
 
     @Column(name = "code_expiration_time")
     private LocalDateTime codeExpirationTime;
+
+    @Column(name = "profile_picture")
+    private String profilePicture;
 }
 

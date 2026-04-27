@@ -39,6 +39,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/health/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/contact/offices/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/contact/send").permitAll()
+                .requestMatchers("/uploads/**").permitAll()
 
                 // Contact admin
                 .requestMatchers("/api/contact/admin/**").hasAnyRole("ADMIN", "OWNER")

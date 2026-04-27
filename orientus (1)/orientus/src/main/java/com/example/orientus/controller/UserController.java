@@ -39,6 +39,7 @@ public class UserController {
         response.put("phone", user.getPhone());
         response.put("nationality", user.getNationality());
         response.put("role", user.getRole().name());
+        response.put("profilePicture", user.getProfilePicture());
         response.put("createdAt", user.getCreatedAt());
 
         return ResponseEntity.ok(response);
@@ -64,6 +65,7 @@ public class UserController {
         response.put("phone", updatedUser.getPhone());
         response.put("nationality", updatedUser.getNationality());
         response.put("role", updatedUser.getRole().name());
+        response.put("profilePicture", updatedUser.getProfilePicture());
         response.put("message", "Profile updated successfully");
 
         return ResponseEntity.ok(response);
@@ -78,5 +80,24 @@ public class UserController {
     public ResponseEntity<?> deleteAccount(@RequestParam String email) {
         userService.deleteUser(email);
         return ResponseEntity.ok(Map.of("message", "Account deleted successfully"));
+    }
+
+    /**
+     * POST /api/users/profile/avatar?email=xxx
+     * Upload an avatar
+     */
+    @PostMapping("/profile/avatar")
+    public ResponseEntity<?> uploadAvatar(
+            @RequestParam String email,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        try {
+            User updatedUser = userService.updateProfilePicture(email, file);
+            return ResponseEntity.ok(Map.of(
+                "message", "Profile picture updated successfully",
+                "profilePicture", updatedUser.getProfilePicture()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 }

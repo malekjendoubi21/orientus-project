@@ -58,9 +58,8 @@ const Navbar = () => {
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-white shadow-md py-4' : 'bg-transparent py-6'
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md py-4' : 'bg-transparent py-6'
+        }`}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
@@ -71,9 +70,9 @@ const Navbar = () => {
             className="flex items-center cursor-pointer"
             onClick={goToHome}
           >
-            <img 
-              src="/black.png" 
-              alt="Orientus Logo" 
+            <img
+              src="/black.png"
+              alt="Orientus Logo"
               className="h-16 md:h-20 w-auto"
             />
           </motion.div>
@@ -150,9 +149,13 @@ const Navbar = () => {
                   onClick={() => setShowUserMenu(!showUserMenu)}
                   className="flex items-center gap-2.5 pl-1 pr-3 py-1 rounded-full border-2 border-gray-200 hover:border-blue-400 bg-white shadow-sm hover:shadow-md transition-all"
                 >
-                  <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-inner">
-                    {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
-                  </div>
+                  {user.profilePicture ? (
+                    <img src={`http://localhost:8084${user.profilePicture}`} alt="Profile" className="w-9 h-9 rounded-full object-cover shadow-inner" />
+                  ) : (
+                    <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-inner">
+                      {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
+                    </div>
+                  )}
                   <span className="text-sm font-semibold text-gray-800 max-w-[120px] truncate">{user.firstName}</span>
                   <svg className={`w-3.5 h-3.5 text-gray-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
@@ -172,9 +175,13 @@ const Navbar = () => {
                       {/* User info header */}
                       <div className="px-5 py-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-b border-gray-100">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                            {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
-                          </div>
+                          {user.profilePicture ? (
+                            <img src={`http://localhost:8084${user.profilePicture}`} alt="Profile" className="w-12 h-12 rounded-full object-cover shadow-lg" />
+                          ) : (
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                              {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-gray-900">{user.firstName} {user.lastName}</p>
                             <p className="text-xs text-gray-500 truncate">{user.email}</p>
