@@ -1,11 +1,34 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { programService } from '../services/programService';
 
 const WhyChooseUs = () => {
+  const [statsData, setStatsData] = useState({
+    universities: 13000,
+    countries: 150,
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const stats = await programService.getStats();
+        if (stats) {
+          setStatsData({
+            universities: stats.totalUniversities > 0 ? stats.totalUniversities : 13000,
+            countries: stats.totalCountries > 0 ? stats.totalCountries : 150,
+          });
+        }
+      } catch {
+        // Garde les valeurs par défaut
+      }
+    };
+    fetchStats();
+  }, []);
+
   const stats = [
-    { value: 13000, suffix: '+', label: 'Partner Universities', duration: 2 },
+    { value: statsData.universities, suffix: '+', label: 'Partner Universities', duration: 2 },
     { value: 50000, suffix: '+', label: 'Students Placed', duration: 2.5 },
-    { value: 150, suffix: '+', label: 'Countries', duration: 2 },
+    { value: statsData.countries, suffix: '+', label: 'Countries', duration: 2 },
     { value: 98, suffix: '%', label: 'Success Rate', duration: 1.5 },
   ];
 
@@ -59,7 +82,7 @@ const WhyChooseUs = () => {
         {/* Stats Counter */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
           {stats.map((stat, index) => (
-            <StatCounter key={index} {...stat} index={index} />
+            <StatCounter key={`${stat.label}-${stat.value}`} {...stat} index={index} />
           ))}
         </div>
 

@@ -220,6 +220,25 @@ export const programService = {
   },
 
   /**
+   * 📊 Récupérer les statistiques globales (universités, pays, programmes)
+   * Utilisé par Hero et WhyChooseUs pour afficher des données dynamiques
+   */
+  getStats: async (): Promise<{
+    totalPrograms: number;
+    totalUniversities: number;
+    totalCountries: number;
+    categories: number;
+    degrees: number;
+  } | null> => {
+    try {
+      const response = await api.get('/programs/stats');
+      return response.data;
+    } catch {
+      return null;
+    }
+  },
+
+  /**
    * 💓 Health check — réveiller le backend / keep-alive
    */
   healthCheck: async (): Promise<boolean> => {

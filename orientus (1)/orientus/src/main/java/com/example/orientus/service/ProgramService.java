@@ -251,7 +251,8 @@ public class ProgramService {
     public Map<String, Object> getOptimizedStats() {
         Map<String, Object> stats = new LinkedHashMap<>();
         stats.put("totalPrograms", programRepository.count());
-        stats.put("countries", programRepository.findDistinctCountries().size());
+        stats.put("totalUniversities", programRepository.countDistinctUniversities());
+        stats.put("totalCountries", programRepository.findDistinctCountries().size());
         stats.put("categories", programRepository.findDistinctCategories().size());
         stats.put("degrees", programRepository.findDistinctDegrees().size());
         return stats;

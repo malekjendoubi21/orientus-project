@@ -10,6 +10,7 @@ const Hero = () => {
   const [selectedDomain, setSelectedDomain] = useState('');
   const [selectedDestination, setSelectedDestination] = useState('');
   const [destinations, setDestinations] = useState<string[]>([]);
+  const [universitiesLabel, setUniversitiesLabel] = useState<string>('13,000+');
 
   useEffect(() => {
     const fetchDestinations = async () => {
@@ -25,7 +26,20 @@ const Hero = () => {
         // Ignore errors, we'll just have an empty list
       }
     };
+
+    const fetchStats = async () => {
+      try {
+        const stats = await programService.getStats();
+        if (stats && stats.totalUniversities > 0) {
+          setUniversitiesLabel(`${stats.totalUniversities.toLocaleString()}+`);
+        }
+      } catch {
+        // Garde la valeur par défaut "13,000+"
+      }
+    };
+
     fetchDestinations();
+    fetchStats();
   }, []);
 
   const handleSearch = () => {
@@ -170,7 +184,7 @@ const Hero = () => {
                 className="absolute -bottom-6 -right-6 bg-white p-4 rounded-xl shadow-lg"
               >
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-600">13,000+</p>
+                  <p className="text-2xl font-bold text-blue-600">{universitiesLabel}</p>
                   <p className="text-sm text-gray-600">Partner Universities</p>
                 </div>
               </motion.div>

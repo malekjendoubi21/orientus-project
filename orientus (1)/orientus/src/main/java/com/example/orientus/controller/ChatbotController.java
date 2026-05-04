@@ -32,14 +32,14 @@ public class ChatbotController {
     @GetMapping("/welcome")
     public ResponseEntity<WelcomeResponse> welcome() {
         WelcomeResponse response = WelcomeResponse.builder()
-                .message("Bonjour ! Je suis l'assistant Orientus. Je peux vous aider à trouver des programmes d'études à l'étranger parmi nos universités partenaires. Posez-moi une question !")
+                .message("Bonjour ! Je suis l'assistant Orientus 🎓\n\nJe peux vous aider à :\n• 🔍 **Trouver des programmes** d'études à l'étranger\n• 📊 **Vous donner les stats** de la plateforme\n• 🗺️ **Vous guider** sur le site (comment postuler, s'inscrire...)\n\nQue puis-je faire pour vous ?")
                 .suggestions(List.of(
+                        "Combien de programmes sont disponibles ?",
+                        "Comment postuler à un programme ?",
                         "Je veux étudier en France",
-                        "Programmes Master en IT",
-                        "Budget < 5000€/an",
-                        "Quels pays sont disponibles ?",
-                        "Bachelor en Business en Espagne",
-                        "Programmes en anglais en Allemagne"
+                        "Comment créer un compte ?",
+                        "Master en IT en Espagne",
+                        "Comment voir mes candidatures ?"
                 ))
                 .build();
         return ResponseEntity.ok(response);

@@ -71,6 +71,10 @@ public interface ProgramRepository extends JpaRepository<Program, Long> {
     @Query("SELECT DISTINCT p.language FROM Program p WHERE p.language IS NOT NULL ORDER BY p.language")
     List<String> findDistinctLanguages();
 
+    // Compter les universités distinctes
+    @Query("SELECT COUNT(DISTINCT p.university) FROM Program p WHERE p.university IS NOT NULL")
+    Long countDistinctUniversities();
+
     // ==========================================
     // AMÉLIORATION 3 : Filtres combinés
     // Une seule requête JPQL qui combine TOUS les filtres (remplace les else if)

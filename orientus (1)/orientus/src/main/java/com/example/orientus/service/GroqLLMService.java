@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
  * - Amélioration 3 : Support de l'historique de conversation
  * - Amélioration 5 : Multi-langue (FR/EN/AR) — détection automatique
  * - Amélioration 6 : Clarification automatique pour questions vagues
+ * - Amélioration 11 : Mode Guide du site (navigation, tutoriels, stats)
  */
 @Service
 @Slf4j
@@ -136,6 +137,155 @@ public class GroqLLMService {
      */
     public String generateNaturalResponse(String userQuestion, List<PartnerProgram> results, SearchCriteria criteria) {
         return generateNaturalResponse(userQuestion, results, criteria, null);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // AMÉLIORATION 11 : MODE GUIDE DU SITE
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Détecte si la question concerne la navigation/utilisation du site
+     * plutôt qu'une recherche de programme
+     */
+    public boolean isGuideQuestion(String question) {
+        String q = question.toLowerCase();
+        String[] guideKeywords = {
+            // Navigation
+            "comment", "où", "ou", "comment faire", "comment je", "how to", "where",
+            // Actions sur le site
+            "postuler", "candidature", "inscription", "s'inscrire", "créer un compte",
+            "connexion", "se connecter", "login", "register", "sign up",
+            "apply", "application", "soumettre", "submit",
+            "profil", "profile", "modifier mon profil", "changer mon mot de passe",
+            "recommandation", "recommendation", "trouver un programme",
+            "contact", "contacter", "message", "messagerie",
+            // Stats du site
+            "combien", "nombre", "how many", "total", "disponible", "available",
+            "programmes disponibles", "pays disponibles", "universités partenaires",
+            // Navigation
+            "page", "section", "menu", "aller", "accéder", "trouver",
+            "quel est", "qu'est-ce que", "c'est quoi", "what is",
+            // Aide générale
+            "aide", "help", "guide", "tutoriel", "explication"
+        };
+        for (String kw : guideKeywords) {
+            if (q.contains(kw)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Génère une réponse de guide du site avec les stats réelles de la BDD
+     * @param userQuestion La question de l'utilisateur
+     * @param siteStats Les statistiques réelles (nombre de programmes, pays, universités)
+     * @param history L'historique de conversation
+     * @return La réponse guide
+     */
+    public String generateSiteGuideResponse(String userQuestion, Map<String, Object> siteStats,
+                                             List<ChatMessage> history) {
+        String systemPrompt = buildSiteGuideSystemPrompt(siteStats);
+
+        List<Map<String, String>> messages = buildMessagesWithHistory(systemPrompt, userQuestion, history);
+
+        Map<String, Object> request = Map.of(
+                "model", model,
+                "messages", messages,
+                "temperature", 0.5
+        );
+
+        try {
+            String response = callGroq(request);
+            JsonNode root = objectMapper.readTree(response);
+            return root.path("choices").get(0).path("message").path("content").asText();
+        } catch (Exception e) {
+            log.error("❌ Erreur guide réponse : {}", e.getMessage());
+            return "Désolé, une erreur s'est produite. Veuillez réessayer.";
+        }
+    }
+
+    /**
+     * Construit le system prompt du mode Guide avec les stats réelles injectées
+     */
+    private String buildSiteGuideSystemPrompt(Map<String, Object> stats) {
+        long totalPrograms   = stats.containsKey("totalPrograms")     ? (long) stats.get("totalPrograms")     : 0;
+        long totalCountries  = stats.containsKey("totalCountries")    ? (long) stats.get("totalCountries")    : 0;
+        long totalUniversities = stats.containsKey("totalUniversities") ? (long) stats.get("totalUniversities") : 0;
+        String countriesList = stats.containsKey("countriesList")     ? (String) stats.get("countriesList")   : "";
+
+        return String.format("""
+            Tu es l'assistant officiel du site web Orientus, une agence d'orientation pour les études à l'étranger.
+
+            === INFORMATIONS RÉELLES DU SITE (mises à jour en temps réel) ===
+            - Nombre total de programmes disponibles : %d programmes
+            - Nombre de pays partenaires             : %d pays
+            - Nombre d'universités partenaires       : %d universités
+            - Pays disponibles                       : %s
+
+            === PAGES ET FONCTIONNALITÉS DU SITE ===
+
+            📌 PAGE D'ACCUEIL (/)
+            - Présentation de la plateforme
+            - Statistiques globales (programmes, universités, pays)
+            - Bouton vers la page Programmes et Recommandations
+
+            🎓 PAGE PROGRAMMES (/programs)
+            - Parcourir tous les programmes disponibles
+            - Filtres : pays, catégorie (domaine), diplôme, langue
+            - Barre de recherche par mots-clés
+            - Cliquer sur une carte pour voir les détails du programme
+
+            🎯 PAGE RECOMMANDATIONS (/recommendations)
+            - Formulaire en 4 étapes pour décrire son profil
+            - Étape 1 : domaine d'intérêt, diplôme visé, diplôme actuel, GPA
+            - Étape 2 : pays préféré, langue préférée, mode d'études
+            - Étape 3 : niveau de langue, score IELTS
+            - Étape 4 : budget maximum, besoin de bourse
+            - L'IA analyse le profil et recommande les 10 meilleurs programmes
+
+            📝 POSTULER À UN PROGRAMME
+            1. Aller sur /programs
+            2. Cliquer sur le programme qui vous intéresse
+            3. Sur la page de détails, cliquer sur le bouton "Postuler" (Apply)
+            4. Remplir le formulaire de candidature (lettre de motivation, documents)
+            5. Soumettre — vous recevrez une confirmation par email
+            6. Suivre l'état de votre candidature sur /my-applications
+
+            👤 INSCRIPTION ET CONNEXION
+            - Créer un compte : aller sur /register
+            - Se connecter    : aller sur /login
+            - Mot de passe oublié : cliquer "Forgot Password" sur /login → /forgot-password
+            - Vérification email : après inscription, vérifier son email avec le code reçu
+
+            👤 PAGE PROFIL (/profile)
+            - Modifier ses informations personnelles (nom, email, téléphone, nationalité)
+            - Changer son mot de passe
+            - Mettre à jour sa photo de profil
+
+            📋 MES CANDIDATURES (/my-applications)
+            - Voir toutes ses candidatures soumises
+            - Suivre le statut : En attente → Acceptée / Refusée
+            - Télécharger les documents soumis
+
+            💬 MESSAGERIE (/messages)
+            - Contacter directement un conseiller Orientus
+            - Envoyer un message et recevoir une réponse en temps réel
+            - Accessible uniquement aux étudiants connectés
+
+            📞 CONTACT (/contact)
+            - Formulaire de contact pour questions générales
+            - Voir les bureaux Orientus sur la carte interactive
+            - Envoyer un email directement depuis le site
+
+            === RÈGLES DE RÉPONSE ===
+            1. Réponds TOUJOURS dans la même langue que l'utilisateur (FR/EN/AR)
+            2. Donne des instructions CLAIRES avec les chemins de pages (ex: /programs)
+            3. Si tu mentionnes des statistiques, utilise les chiffres réels fournis ci-dessus
+            4. Sois concis, amical et professionnel
+            5. Si tu ne sais pas quelque chose, dis de contacter le support via /contact
+            6. Ne réponds PAS à des questions hors contexte du site Orientus
+            """,
+                totalPrograms, totalCountries, totalUniversities, countriesList
+        );
     }
 
     /**

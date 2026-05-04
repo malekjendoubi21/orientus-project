@@ -3,11 +3,14 @@ package com.example.orientus.service;
 import com.example.orientus.dto.*;
 import com.example.orientus.entity.PartnerProgram;
 import com.example.orientus.repository.PartnerProgramRepository;
+import com.example.orientus.repository.ProgramRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -31,6 +34,7 @@ public class ChatbotService {
     private final ChatbotSearchService searchService;
     private final ChatbotCacheService cacheService;
     private final PartnerProgramRepository programRepository;
+    private final ProgramRepository mainProgramRepository;
 
     /**
      * Traiter une question de l'étudiant (méthode originale, rétrocompatible)
@@ -52,6 +56,39 @@ public class ChatbotService {
 
         // Amélioration 7 : Générer un messageId unique pour cette réponse
         String messageId = UUID.randomUUID().toString();
+
+        // ═══════════════════════════════════════════════════════════════
+        // Amélioration 11 : MODE GUIDE DU SITE
+        // Détection prioritaire avant la recherche de programmes
+        // ═══════════════════════════════════════════════════════════════
+        if (llmService.isGuideQuestion(question)) {
+            log.info("🗺️ Question guide détectée — mode Guide du site activé");
+
+            // Récupérer les stats réelles depuis la BDD
+            long totalPrograms    = mainProgramRepository.count();
+            long totalCountries   = mainProgramRepository.findDistinctCountries().size();
+            long totalUniversities = mainProgramRepository.countDistinctUniversities();
+            String countriesList  = String.join(", ", mainProgramRepository.findDistinctCountries());
+
+            Map<String, Object> siteStats = new HashMap<>();
+            siteStats.put("totalPrograms",    totalPrograms);
+            siteStats.put("totalCountries",   totalCountries);
+            siteStats.put("totalUniversities", totalUniversities);
+            siteStats.put("countriesList",    countriesList);
+
+            String guideResponse = llmService.generateSiteGuideResponse(question, siteStats, history);
+
+            return ChatbotResponse.builder()
+                    .messageId(messageId)
+                    .inDomain(true)
+                    .message(guideResponse)
+                    .needsClarification(false)
+                    .build();
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // Mode recherche de programmes (comportement original)
+        // ═══════════════════════════════════════════════════════════════
 
         // 1. Récupérer pays disponibles
         List<String> availableCountries = programRepository.findDistinctCountries();
