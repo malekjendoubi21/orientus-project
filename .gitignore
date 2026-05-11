@@ -1,0 +1,51 @@
+# =============================================================
+# Orientus — Root .gitignore
+# =============================================================
+
+# ── Secrets (NEVER commit these!) ────────────────────────
+.env
+*.env.local
+application.properties
+!application.properties.example
+
+# ── Node / Frontend ───────────────────────────────────────
+node_modules/
+dist/
+build/
+.cache/
+
+# ── Spring Boot / Java ────────────────────────────────────
+target/
+*.class
+*.jar
+*.war
+*.log
+hs_err_pid*
+
+# ── Python / ML ───────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+ml/logs/
+
+# ── IDE / Editor ──────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
+*.swp
+*.suo
+.DS_Store
+Thumbs.db
+
+# ── Uploads (user data, not versioned) ───────────────────
+orientus (1)/orientus/uploads/
+
+# ── Misc ─────────────────────────────────────────────────
+mdp.txt
+*.tmp
+*.bak

@@ -6,6 +6,7 @@ const WhyChooseUs = () => {
   const [statsData, setStatsData] = useState({
     universities: 13000,
     countries: 150,
+    programs: 1000,
   });
 
   useEffect(() => {
@@ -16,6 +17,7 @@ const WhyChooseUs = () => {
           setStatsData({
             universities: stats.totalUniversities > 0 ? stats.totalUniversities : 13000,
             countries: stats.totalCountries > 0 ? stats.totalCountries : 150,
+            programs: stats.totalPrograms > 0 ? stats.totalPrograms : 1000,
           });
         }
       } catch {
@@ -27,7 +29,7 @@ const WhyChooseUs = () => {
 
   const stats = [
     { value: statsData.universities, suffix: '+', label: 'Partner Universities', duration: 2 },
-    { value: 50000, suffix: '+', label: 'Students Placed', duration: 2.5 },
+    { value: statsData.programs, suffix: '+', label: 'Programs Available', duration: 2.5 },
     { value: statsData.countries, suffix: '+', label: 'Countries', duration: 2 },
     { value: 98, suffix: '%', label: 'Success Rate', duration: 1.5 },
   ];

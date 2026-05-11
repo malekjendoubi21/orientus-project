@@ -20,6 +20,12 @@ const AdminProgramsPage = () => {
   const [formError, setFormError] = useState<string>(''); // For form validation errors
   const [currentPage, setCurrentPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  // Filter states
+  const [filterCountry, setFilterCountry] = useState('');
+  const [filterDegree, setFilterDegree] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterStudyMode, setFilterStudyMode] = useState('');
+  const [filterFeatured, setFilterFeatured] = useState('');
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -62,15 +68,38 @@ const AdminProgramsPage = () => {
 
   // React Query for programs list with caching
   const { data, isLoading, isFetching, error } = useQuery({
-    queryKey: ['admin-programs', currentPage, searchQuery],
+    queryKey: ['admin-programs', currentPage, searchQuery, filterCountry, filterDegree, filterCategory, filterStudyMode, filterFeatured],
     queryFn: () => {
-      const filters = searchQuery ? { search: searchQuery } : undefined;
-      return programService.getPrograms(currentPage, 10, filters);
+      const filters: Record<string, string> = {};
+      if (searchQuery)     filters.search    = searchQuery;
+      if (filterCountry)   filters.country   = filterCountry;
+      if (filterDegree)    filters.degree    = filterDegree;
+      if (filterCategory)  filters.category  = filterCategory;
+      return programService.getPrograms(currentPage, 10, Object.keys(filters).length ? filters : undefined);
     },
-    staleTime: 2 * 60 * 1000, // Admin data stays fresh for 2 minutes
-    gcTime: 5 * 60 * 1000, // Cache persists for 5 minutes
-    placeholderData: (previousData) => previousData, // Keep showing old data while fetching new
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
+
+  // Unique filter options derived from loaded data (all programs metadata)
+  const { data: metaData } = useQuery({
+    queryKey: ['admin-programs-meta'],
+    queryFn: () => programService.getAllPrograms(),
+    staleTime: 10 * 60 * 1000,
+  });
+  const allCountries: string[] = metaData?.filters?.countries ?? [];
+
+  const resetFilters = () => {
+    setFilterCountry('');
+    setFilterDegree('');
+    setFilterCategory('');
+    setFilterStudyMode('');
+    setFilterFeatured('');
+    setSearchQuery('');
+    setCurrentPage(0);
+  };
+  const activeFilterCount = [filterCountry, filterDegree, filterCategory, filterStudyMode, filterFeatured].filter(Boolean).length;
 
   // Extract data from React Query response
   const programs = data?.programs || [];
@@ -295,23 +324,120 @@ const AdminProgramsPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Search */}
-      <motion.div variants={itemVariants} className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
+      {/* Search + Filters */}
+      <motion.div variants={itemVariants} className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50 space-y-4">
+        {/* Search bar */}
         <div className="relative">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
             type="text"
-            placeholder="Search programs..."
+            placeholder="Search by title, university, country..."
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(0);
-            }}
+            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(0); }}
             className="w-full pl-10 pr-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
           />
         </div>
+
+        {/* Filter row */}
+        <div className="flex flex-wrap gap-3 items-center">
+          {/* Country */}
+          <select
+            value={filterCountry}
+            onChange={(e) => { setFilterCountry(e.target.value); setCurrentPage(0); }}
+            className="px-3 py-2 bg-slate-700/60 border border-slate-600 rounded-lg text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 min-w-[140px]"
+          >
+            <option value="">🌍 All Countries</option>
+            {allCountries.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+
+          {/* Degree */}
+          <select
+            value={filterDegree}
+            onChange={(e) => { setFilterDegree(e.target.value); setCurrentPage(0); }}
+            className="px-3 py-2 bg-slate-700/60 border border-slate-600 rounded-lg text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 min-w-[140px]"
+          >
+            <option value="">🎓 All Degrees</option>
+            {Object.entries(DEGREE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+
+          {/* Category */}
+          <select
+            value={filterCategory}
+            onChange={(e) => { setFilterCategory(e.target.value); setCurrentPage(0); }}
+            className="px-3 py-2 bg-slate-700/60 border border-slate-600 rounded-lg text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 min-w-[150px]"
+          >
+            <option value="">📚 All Categories</option>
+            {Object.entries(CATEGORY_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+
+          {/* Study Mode */}
+          <select
+            value={filterStudyMode}
+            onChange={(e) => { setFilterStudyMode(e.target.value); setCurrentPage(0); }}
+            className="px-3 py-2 bg-slate-700/60 border border-slate-600 rounded-lg text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 min-w-[130px]"
+          >
+            <option value="">🏫 All Modes</option>
+            <option value="ON_CAMPUS">Sur campus</option>
+            <option value="DISTANCE">En ligne</option>
+            <option value="BLENDED">Hybride</option>
+          </select>
+
+          {/* Featured */}
+          <select
+            value={filterFeatured}
+            onChange={(e) => { setFilterFeatured(e.target.value); setCurrentPage(0); }}
+            className="px-3 py-2 bg-slate-700/60 border border-slate-600 rounded-lg text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 min-w-[130px]"
+          >
+            <option value="">⭐ Featured</option>
+            <option value="true">Featured only</option>
+            <option value="false">Not featured</option>
+          </select>
+
+          {/* Reset button */}
+          {(activeFilterCount > 0 || searchQuery) && (
+            <button
+              onClick={resetFilters}
+              className="flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-400 rounded-lg text-sm transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Reset{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+            </button>
+          )}
+        </div>
+
+        {/* Active filter pills */}
+        {(filterCountry || filterDegree || filterCategory || filterStudyMode) && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {filterCountry && (
+              <span className="flex items-center gap-1 px-3 py-1 bg-violet-500/20 text-violet-300 border border-violet-500/30 rounded-full text-xs">
+                🌍 {filterCountry}
+                <button onClick={() => setFilterCountry('')} className="hover:text-white ml-1">×</button>
+              </span>
+            )}
+            {filterDegree && (
+              <span className="flex items-center gap-1 px-3 py-1 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-full text-xs">
+                🎓 {DEGREE_LABELS[filterDegree as keyof typeof DEGREE_LABELS] || filterDegree}
+                <button onClick={() => setFilterDegree('')} className="hover:text-white ml-1">×</button>
+              </span>
+            )}
+            {filterCategory && (
+              <span className="flex items-center gap-1 px-3 py-1 bg-green-500/20 text-green-300 border border-green-500/30 rounded-full text-xs">
+                📚 {CATEGORY_LABELS[filterCategory as keyof typeof CATEGORY_LABELS] || filterCategory}
+                <button onClick={() => setFilterCategory('')} className="hover:text-white ml-1">×</button>
+              </span>
+            )}
+            {filterStudyMode && (
+              <span className="flex items-center gap-1 px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-xs">
+                🏫 {filterStudyMode === 'ON_CAMPUS' ? 'Sur campus' : filterStudyMode === 'DISTANCE' ? 'En ligne' : 'Hybride'}
+                <button onClick={() => setFilterStudyMode('')} className="hover:text-white ml-1">×</button>
+              </span>
+            )}
+          </div>
+        )}
       </motion.div>
 
       {/* Fetching Indicator */}

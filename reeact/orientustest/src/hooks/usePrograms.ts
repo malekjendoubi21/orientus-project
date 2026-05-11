@@ -18,7 +18,8 @@ import type {
 } from '../models/Program';
 
 // Seuil au-dessus duquel on passe en mode paginé
-const HYBRID_THRESHOLD = 200;
+// Réglé à 2000 pour que les 1088 programmes soient filtrés côté client (multi-sélection JS)
+const HYBRID_THRESHOLD = 2000;
 
 // Nombre de programmes par page
 const PAGE_SIZE = 12;
@@ -47,8 +48,12 @@ export interface UseProgramsResult {
 
 // ─── Helpers de filtrage / tri côté JS ────────────────────────────────
 
-/** Filtrer les programmes en mémoire */
+/** Filtrer les programmes en mémoire — supporte multi-valeurs (séparées par virgule) */
 function filterProgramsLocal(programs: Program[], filters: ProgramFilters): Program[] {
+  const countries = filters.country ? filters.country.split(',').filter(Boolean) : [];
+  const degrees   = filters.degree   ? filters.degree.split(',').filter(Boolean)  : [];
+  const categories = filters.category ? filters.category.split(',').filter(Boolean) : [];
+
   return programs.filter((p) => {
     if (filters.search) {
       const q = filters.search.toLowerCase();
@@ -60,9 +65,9 @@ function filterProgramsLocal(programs: Program[], filters: ProgramFilters): Prog
         (p.description && p.description.toLowerCase().includes(q));
       if (!match) return false;
     }
-    if (filters.country && p.country !== filters.country) return false;
-    if (filters.category && p.category !== filters.category) return false;
-    if (filters.degree && p.degree !== filters.degree) return false;
+    if (countries.length  && !countries.includes(p.country))   return false;
+    if (degrees.length    && !degrees.includes(p.degree as string))    return false;
+    if (categories.length && !categories.includes(p.category as string)) return false;
     if (filters.language && p.language !== filters.language) return false;
     if (filters.duration && p.duration !== filters.duration) return false;
     return true;

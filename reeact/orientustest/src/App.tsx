@@ -90,7 +90,8 @@ function BackendWarmup() {
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL;
     if (apiUrl) {
-      fetch(`${apiUrl}/api/health`).catch(() => {});
+      // apiUrl already ends with /api (e.g. http://localhost:8084/api)
+      fetch(`${apiUrl}/health`).catch(() => {});
     }
   }, []);
 
@@ -99,7 +100,8 @@ function BackendWarmup() {
     const apiUrl = import.meta.env.VITE_API_URL;
     if (!apiUrl) return;
     const keepAlive = setInterval(() => {
-      fetch(`${apiUrl}/api/health`).catch(() => {});
+      // apiUrl already ends with /api (e.g. http://localhost:8084/api)
+      fetch(`${apiUrl}/health`).catch(() => {});
     }, 14 * 60 * 1000);
     return () => clearInterval(keepAlive);
   }, []);

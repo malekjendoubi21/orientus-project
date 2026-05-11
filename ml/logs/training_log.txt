@@ -1,4 +1,4 @@
-Training completed at 2026-05-04 10:02:54
+Training completed at 2026-05-04 22:04:50
 Dataset: data/training_data.csv (2000 samples)
 Split: 1600 train / 400 val
 Model: XGBoost Regressor
