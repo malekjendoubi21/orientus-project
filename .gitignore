@@ -43,7 +43,7 @@ ml/logs/
 Thumbs.db
 
 # ── Uploads (user data, not versioned) ───────────────────
-orientus (1)/orientus/uploads/
+backend/uploads/
 
 # ── Misc ─────────────────────────────────────────────────
 mdp.txt

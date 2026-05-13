@@ -175,13 +175,13 @@ orientus_project/
 ├── .env                         ← Your actual secrets (DO NOT COMMIT)
 ├── .gitignore                   ← Protects secrets from git
 │
-├── reeact/orientustest/         ── FRONTEND (React + Vite)
+├── frontend/                    ── FRONTEND (React + Vite)
 │   ├── Dockerfile               ← Multi-stage: Node build → Nginx serve
 │   ├── nginx.conf               ← Nginx config (SPA + API proxy)
 │   ├── .env.example             ← Frontend env template
 │   └── src/                    ← React source code
 │
-├── orientus (1)/orientus/       ── BACKEND (Spring Boot)
+├── backend/                     ── BACKEND (Spring Boot)
 │   ├── Dockerfile               ← Multi-stage: Maven build → JRE runtime
 │   ├── DEPLOYMENT.md            ← Backend-specific deployment notes
 │   ├── docker-compose.yml       ← DB only (for local dev without Docker full)

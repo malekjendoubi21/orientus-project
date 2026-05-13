@@ -8,8 +8,8 @@
 
 ```
 orientus_project/
-├── reeact/orientustest/        # React + TypeScript + Vite (Frontend)
-├── orientus (1)/orientus/      # Spring Boot (Backend API)
+├── frontend/                   # React + TypeScript + Vite (Frontend)
+├── backend/                    # Spring Boot (Backend API)
 ├── ml/                         # FastAPI + XGBoost (ML Recommendation Service)
 ├── docker-compose.full.yml     # Full-stack Docker Compose (all services)
 └── README.md                   # This file
@@ -64,11 +64,11 @@ orientus_project/
 
 1. **Clone & configure environment variables:**
 ```bash
-cp reeact/orientustest/.env.example reeact/orientustest/.env
+cp frontend/.env.example frontend/.env
 # Edit the .env file with your API keys
 ```
 
-2. **Configure backend secrets** (see `orientus (1)/orientus/src/main/resources/`):
+2. **Configure backend secrets** (see `backend/src/main/resources/`):
    - Copy `application.properties.example` → `application.properties`
    - Fill in your database, JWT, email, and Groq API credentials
 
@@ -105,15 +105,15 @@ Password: Admin123!
 
 ## 📖 Component READMEs
 
-- [Frontend README](reeact/orientustest/README.md)
-- [Backend README](orientus%20(1)/orientus/DEPLOYMENT.md)
+- [Frontend README](frontend/README.md)
+- [Backend README](backend/DEPLOYMENT.md)
 - [ML Service README](ml/README.md)
 
 ---
 
 ## 📋 Environment Variables Summary
 
-### Frontend (`reeact/orientustest/.env`)
+### Frontend (`frontend/.env`)
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `VITE_API_URL` | Backend API base URL | ✅ |
@@ -132,6 +132,8 @@ Password: Admin123!
 | `spring.mail.password` | SMTP app password | ✅ |
 | `ml.api.url` | ML service URL | ✅ |
 | `app.frontend.url` | Frontend URL (for email links) | ✅ |
+| `app.rate-limit.chatbot-per-minute` | Chatbot requests/min per user | ✅ |
+| `app.rate-limit.recommendations-per-minute` | Recommendation requests/min per user | ✅ |
 
 ---
 

@@ -31,7 +31,7 @@ services:
   # ── Spring Boot Backend ───────────────────────────────────
   backend:
     build:
-      context: ./orientus (1)/orientus
+      context: ./backend
       dockerfile: Dockerfile
     container_name: orientus-backend
     restart: unless-stopped
@@ -54,6 +54,9 @@ services:
       ML_API_URL: http://ml:5000
       # Frontend URL (used in email links)
       APP_FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      # API rate limiting
+      APP_RATE_LIMIT_CHATBOT_PER_MINUTE: ${APP_RATE_LIMIT_CHATBOT_PER_MINUTE:-30}
+      APP_RATE_LIMIT_RECOMMENDATIONS_PER_MINUTE: ${APP_RATE_LIMIT_RECOMMENDATIONS_PER_MINUTE:-20}
     volumes:
       - uploads_data:/app/uploads
     depends_on:
@@ -87,7 +90,7 @@ services:
   # ── React Frontend ────────────────────────────────────────
   frontend:
     build:
-      context: ./reeact/orientustest
+      context: ./frontend
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8084/api}
