@@ -50,5 +50,15 @@ public class User {
 
     @Column(name = "profile_picture")
     private String profilePicture;
+
+    /**
+     * Vrai pour les comptes ADMIN et AGENCY_PARTNER créés par l'OWNER.
+     * L'utilisateur doit changer son mot de passe à la première connexion.
+     * Remis à false une fois le mot de passe changé.
+     * columnDefinition inclut DEFAULT false pour que Hibernate puisse
+     * ajouter la colonne sur une table existante sans erreur NOT NULL.
+     */
+    @Column(name = "must_change_password", nullable = false, columnDefinition = "boolean DEFAULT false")
+    private boolean mustChangePassword = false;
 }
 

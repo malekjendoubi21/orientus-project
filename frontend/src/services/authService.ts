@@ -20,7 +20,7 @@ export const authService = {
         password,
       });
 
-      // ✅ Sauvegarder le token et les infos utilisateur
+      // ✅ Sauvegarder le token et les infos utilisateur (y compris mustChangePassword)
       if (response.data.token) {
         localStorage.setItem(TOKEN_KEY, response.data.token);
         localStorage.setItem(USER_KEY, JSON.stringify({
@@ -30,6 +30,7 @@ export const authService = {
           lastName: response.data.lastName,
           role: response.data.role,
           profilePicture: response.data.profilePicture,
+          mustChangePassword: response.data.mustChangePassword ?? false,
         }));
       }
 
@@ -182,6 +183,34 @@ export const authService = {
         }
       }
       throw new Error('An unexpected error occurred while requesting password reset');
+    }
+  },
+
+  /**
+   * 🔑 Définir le mot de passe à la première connexion (comptes admin/agence créés par l'OWNER)
+   * Met mustChangePassword à false dans localStorage après succès.
+   */
+  setFirstPassword: async (newPassword: string): Promise<{ message: string }> => {
+    try {
+      const response = await api.post<{ message: string }>('/users/first-password', { newPassword });
+      // Mettre à jour localStorage : mustChangePassword = false
+      const userStr = localStorage.getItem(USER_KEY);
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        user.mustChangePassword = false;
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+      }
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          throw new Error(error.response.data.message || 'Failed to update password');
+        }
+        if (error.request) {
+          throw new Error('Unable to reach the server. Please check your connection.');
+        }
+      }
+      throw new Error('An unexpected error occurred while updating password');
     }
   },
 

@@ -2,30 +2,32 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { applicationService } from '../../services/applicationService';
 import { formatDateShort } from '../../utils/formatters';
-import { ApplicationStatus, BUDGET_LABELS, STATUS_LABELS } from '../../models/Application';
+import { ApplicationSource, BUDGET_LABELS, STEP_LABELS } from '../../models/Application';
 import type { Application } from '../../models/Application';
 
-const statusFilterOptions = [
-  { value: '', label: 'Toutes' },
-  { value: ApplicationStatus.NON_REPONDU, label: 'Non répondu' },
-  { value: ApplicationStatus.EN_COURS, label: 'En cours' },
-  { value: ApplicationStatus.CONTACTE, label: 'Contacté' },
-];
-
-const statusBadgeStyles: Record<string, string> = {
-  NON_REPONDU: 'bg-red-500/20 text-red-400 border-red-500/30',
-  EN_COURS: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  CONTACTE: 'bg-green-500/20 text-green-400 border-green-500/30',
+const stepBadgeStyles: Record<string, string> = {
+  APPLICATION_RECEIVED:   'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  STUDENT_CONTACTED:      'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
+  DOSSIER_IN_PREPARATION: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  DOSSIER_READY:          'bg-yellow-600/20 text-yellow-300 border-yellow-600/30',
+  UNIVERSITY_CONTACTED:   'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  UNIVERSITY_ACCEPTED:    'bg-green-500/20 text-green-400 border-green-500/30',
+  UNIVERSITY_REJECTED:    'bg-red-500/20 text-red-400 border-red-500/30',
+  VISA_PROCESSING:        'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  VISA_ACCEPTED:          'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+  VISA_REJECTED:          'bg-red-600/20 text-red-400 border-red-600/30',
 };
 
+type SourceTab = 'DIRECT' | 'AGENCY';
+
 const ApplicationsManagementPage = () => {
+  const [activeTab, setActiveTab] = useState<SourceTab>('DIRECT');
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
-  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | ''>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
@@ -35,11 +37,8 @@ const ApplicationsManagementPage = () => {
     setIsLoading(true);
     setError('');
     try {
-      const data = await applicationService.getApplications(
-        currentPage,
-        10,
-        statusFilter || undefined
-      );
+      const source = activeTab as ApplicationSource;
+      const data = await applicationService.getApplications(currentPage, 10, undefined, source);
       setApplications(data.applications);
       setTotalPages(data.totalPages);
       setTotalItems(data.totalItems);
@@ -49,29 +48,16 @@ const ApplicationsManagementPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, statusFilter]);
+  }, [currentPage, activeTab]);
 
   useEffect(() => {
     fetchApplications();
   }, [fetchApplications]);
 
-  const handleStatusChange = (filter: ApplicationStatus | '') => {
-    setStatusFilter(filter);
+  const handleTabChange = (tab: SourceTab) => {
+    setActiveTab(tab);
     setCurrentPage(0);
-  };
-
-  const handleUpdateStatus = async (id: number, status: ApplicationStatus) => {
-    setActionLoading(id);
-    try {
-      await applicationService.updateApplicationStatus(id, status);
-      setSuccessMessage(`Statut mis à jour : ${STATUS_LABELS[status]}`);
-      setTimeout(() => setSuccessMessage(''), 3000);
-      fetchApplications();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update status');
-    } finally {
-      setActionLoading(null);
-    }
+    setSearchQuery('');
   };
 
   const handleDelete = async (id: number) => {
@@ -96,8 +82,9 @@ const ApplicationsManagementPage = () => {
       app.studentFirstName?.toLowerCase().includes(q) ||
       app.studentLastName?.toLowerCase().includes(q) ||
       app.studentEmail?.toLowerCase().includes(q) ||
-      app.program.title?.toLowerCase().includes(q) ||
-      app.program.university?.toLowerCase().includes(q)
+      app.program?.title?.toLowerCase().includes(q) ||
+      app.program?.university?.toLowerCase().includes(q) ||
+      (activeTab === 'AGENCY' && app.agencyName?.toLowerCase().includes(q))
     );
   });
 
@@ -107,8 +94,38 @@ const ApplicationsManagementPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Gestion des candidatures</h1>
-          <p className="text-slate-400 mt-1">{totalItems} candidature{totalItems !== 1 ? 's' : ''} au total</p>
+          <p className="text-slate-400 mt-1">{totalItems} candidature{totalItems !== 1 ? 's' : ''} — {activeTab === 'DIRECT' ? 'Directes' : 'Via Agences'}</p>
         </div>
+      </div>
+
+      {/* Tab Toggle */}
+      <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-1.5 border border-slate-700/50 inline-flex gap-1">
+        <button
+          onClick={() => handleTabChange('DIRECT')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+            activeTab === 'DIRECT'
+              ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/25'
+              : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Candidatures Directes
+        </button>
+        <button
+          onClick={() => handleTabChange('AGENCY')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+            activeTab === 'AGENCY'
+              ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/25'
+              : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Candidatures Agences
+        </button>
       </div>
 
       {/* Success Message */}
@@ -118,38 +135,19 @@ const ApplicationsManagementPage = () => {
         </div>
       )}
 
-      {/* Filters */}
+      {/* Search */}
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Rechercher par nom, email ou programme..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors"
-            />
-          </div>
-          {/* Status Filter */}
-          <div className="flex gap-2 flex-wrap">
-            {statusFilterOptions.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => handleStatusChange(opt.value as ApplicationStatus | '')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  statusFilter === opt.value
-                    ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/25'
-                    : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700 hover:text-white'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+        <div className="relative">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            placeholder={activeTab === 'AGENCY' ? "Rechercher par nom, email, programme ou agence..." : "Rechercher par nom, email ou programme..."}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors"
+          />
         </div>
       </div>
 
@@ -174,7 +172,11 @@ const ApplicationsManagementPage = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           <h3 className="text-lg font-semibold text-white mb-2">Aucune candidature</h3>
-          <p className="text-slate-400">Aucune candidature ne correspond à vos critères de recherche.</p>
+          <p className="text-slate-400">
+            {activeTab === 'DIRECT'
+              ? "Aucune candidature directe pour le moment."
+              : "Aucune candidature soumise par des agences pour le moment."}
+          </p>
         </div>
       )}
 
@@ -187,9 +189,12 @@ const ApplicationsManagementPage = () => {
                 <tr className="border-b border-slate-700">
                   <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Date</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Étudiant</th>
+                  {activeTab === 'AGENCY' && (
+                    <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Agence</th>
+                  )}
                   <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Programme</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Budget</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Statut</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Étape</th>
                   <th className="text-right px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -207,22 +212,28 @@ const ApplicationsManagementPage = () => {
                         <p className="text-xs text-slate-400">{app.studentEmail}</p>
                       </div>
                     </td>
+                    {activeTab === 'AGENCY' && (
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          {app.agencyName || '—'}
+                        </span>
+                      </td>
+                    )}
                     <td className="px-6 py-4">
                       <div>
-                        <p className="text-sm font-medium text-white truncate max-w-[200px]">{app.program.title}</p>
-                        <p className="text-xs text-slate-400">{app.program.university}</p>
+                        <p className="text-sm font-medium text-white truncate max-w-[180px]">{app.program?.title}</p>
+                        <p className="text-xs text-slate-400">{app.program?.university}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-300 whitespace-nowrap">
                       {BUDGET_LABELS[app.budgetRange]}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusBadgeStyles[app.status]}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${
-                          app.status === 'NON_REPONDU' ? 'bg-red-400' :
-                          app.status === 'EN_COURS' ? 'bg-orange-400' : 'bg-green-400'
-                        }`} />
-                        {STATUS_LABELS[app.status]}
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${stepBadgeStyles[app.applicationStep] || 'bg-slate-500/20 text-slate-400 border-slate-500/30'}`}>
+                        {STEP_LABELS[app.applicationStep] ?? app.applicationStep}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -237,30 +248,6 @@ const ApplicationsManagementPage = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
                         </Link>
-                        {app.status !== ApplicationStatus.EN_COURS && (
-                          <button
-                            onClick={() => handleUpdateStatus(app.id, ApplicationStatus.EN_COURS)}
-                            disabled={actionLoading === app.id}
-                            className="p-2 hover:bg-orange-500/20 rounded-lg transition-colors text-slate-400 hover:text-orange-400"
-                            title="Marquer En cours"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </button>
-                        )}
-                        {app.status !== ApplicationStatus.CONTACTE && (
-                          <button
-                            onClick={() => handleUpdateStatus(app.id, ApplicationStatus.CONTACTE)}
-                            disabled={actionLoading === app.id}
-                            className="p-2 hover:bg-green-500/20 rounded-lg transition-colors text-slate-400 hover:text-green-400"
-                            title="Marquer Contacté"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </button>
-                        )}
                         <button
                           onClick={() => setDeleteConfirm(app.id)}
                           disabled={actionLoading === app.id}
@@ -311,7 +298,6 @@ const ApplicationsManagementPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
           <div className="relative bg-slate-800 rounded-2xl shadow-2xl p-6 max-w-md w-full border border-slate-700">
-
             <div className="text-center">
               <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -334,9 +320,9 @@ const ApplicationsManagementPage = () => {
                   disabled={actionLoading === deleteConfirm}
                   className="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
                 >
-                  {actionLoading === deleteConfirm ? (
+                  {actionLoading === deleteConfirm && (
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : null}
+                  )}
                   Supprimer
                 </button>
               </div>

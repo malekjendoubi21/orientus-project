@@ -17,7 +17,7 @@ const AdminProfilePage = () => {
 
       try {
         setIsLoading(true);
-        const profileData = await adminService.getAdminProfile(admin.email);
+        const profileData = await adminService.getAdminProfile();
         if (!cancelled) {
           setProfile(profileData);
         }

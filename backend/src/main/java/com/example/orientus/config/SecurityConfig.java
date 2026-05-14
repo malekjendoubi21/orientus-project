@@ -55,7 +55,17 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "OWNER")
                 .requestMatchers("/api/applications/stats").hasAnyRole("ADMIN", "OWNER")
                 .requestMatchers(HttpMethod.PUT, "/api/applications/*/status").hasAnyRole("ADMIN", "OWNER")
+                .requestMatchers(HttpMethod.PUT, "/api/applications/*/step").hasAnyRole("ADMIN", "OWNER")
                 .requestMatchers(HttpMethod.GET, "/api/applications").hasAnyRole("ADMIN", "OWNER")
+                .requestMatchers(HttpMethod.DELETE, "/api/applications/**").hasAnyRole("ADMIN", "OWNER")
+
+                // Student only — seul un STUDENT peut soumettre sa propre candidature directe
+                .requestMatchers(HttpMethod.POST, "/api/applications").hasRole("STUDENT")
+                .requestMatchers(HttpMethod.GET, "/api/applications/student/**").hasRole("STUDENT")
+
+                // Agency partner
+                .requestMatchers("/api/auth/agency/create").hasAnyRole("OWNER")
+                .requestMatchers("/api/agency/**").hasAnyRole("AGENCY_PARTNER", "ADMIN", "OWNER")
 
                 // Messaging admin
                 .requestMatchers("/api/messages/conversations/pending").hasAnyRole("ADMIN", "OWNER")

@@ -1,6 +1,8 @@
 package com.example.orientus.entity;
 
+import com.example.orientus.enums.ApplicationSource;
 import com.example.orientus.enums.ApplicationStatus;
+import com.example.orientus.enums.ApplicationStep;
 import com.example.orientus.enums.BudgetRange;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -20,9 +22,9 @@ public class Application {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Relations
+    // Relations — student peut être null pour les dossiers soumis par agence
     @ManyToOne
-    @JoinColumn(name = "student_id", nullable = false)
+    @JoinColumn(name = "student_id", nullable = true)
     private User student;
 
     @ManyToOne
@@ -39,7 +41,6 @@ public class Application {
     @Column(nullable = false)
     private String studentEmail;
 
-    @Column(nullable = false)
     private String studentPhone;
 
     private String studentNationality;
@@ -68,6 +69,20 @@ public class Application {
     @Column(nullable = false)
     private ApplicationStatus status;
 
+    // Source de la candidature
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ApplicationSource source;
+
+    // Nom de l'agence (uniquement si source = AGENCY)
+    @Column(length = 255)
+    private String agencyName;
+
+    // Étape du suivi de dossier (timeline universelle)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ApplicationStep applicationStep;
+
     // Timestamps
     @Column(nullable = false)
     private LocalDateTime applicationDate;
@@ -78,6 +93,10 @@ public class Application {
     protected void onCreate() {
         applicationDate = LocalDateTime.now();
         status = ApplicationStatus.NON_REPONDU;
+        applicationStep = ApplicationStep.APPLICATION_RECEIVED;
+        if (source == null) {
+            source = ApplicationSource.DIRECT;
+        }
     }
 
     @PreUpdate

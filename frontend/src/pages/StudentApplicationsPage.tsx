@@ -3,16 +3,17 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { applicationService } from '../services/applicationService';
-import ApplicationStatusBadge from '../components/ApplicationStatusBadge';
 import { formatDate } from '../utils/formatters';
-import { BUDGET_LABELS } from '../models/Application';
+import { BUDGET_LABELS, STEP_LABELS } from '../models/Application';
 import type { Application } from '../models/Application';
+import ApplicationTimeline from '../components/ApplicationTimeline';
 
 const StudentApplicationsPage = () => {
   const { user } = useAuth();
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,7 +69,7 @@ const StudentApplicationsPage = () => {
             </ol>
           </nav>
           <h1 className="text-3xl font-bold text-gray-900">Mes candidatures</h1>
-          <p className="text-gray-600 mt-2">Suivez l'état de vos candidatures aux programmes</p>
+          <p className="text-gray-600 mt-2">Suivez l'avancement de vos dossiers en temps réel</p>
         </motion.div>
 
         {/* Loading */}
@@ -124,62 +125,91 @@ const StudentApplicationsPage = () => {
                 transition={{ delay: index * 0.05 }}
                 className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
               >
+                {/* Card Header */}
                 <div className="p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center gap-3 mb-1.5">
                         <h3 className="text-lg font-bold text-gray-900 truncate">
-                          {app.program.title}
+                          {app.program?.title}
                         </h3>
-                        <ApplicationStatusBadge status={app.status} size="sm" />
                       </div>
-                      <p className="text-gray-600 text-sm mb-1">
-                        {app.program.university} — {app.program.country}
+                      <p className="text-gray-600 text-sm mb-3">
+                        {app.program?.university} — {app.program?.country}
                       </p>
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mt-2">
-                        <span className="flex items-center gap-1">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {/* Current step badge */}
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold">
+                          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                          {STEP_LABELS[app.applicationStep] ?? app.applicationStep}
+                        </span>
+                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
                           {formatDate(app.applicationDate)}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           {BUDGET_LABELS[app.budgetRange]}
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        {app.hasPassport && (
-                          <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium">Passeport</span>
-                        )}
-                        {app.hasEnglishB2 && (
-                          <span className="px-2 py-1 bg-purple-50 text-purple-600 rounded-lg text-xs font-medium">EN B2</span>
-                        )}
-                        {app.hasFrenchB2 && (
-                          <span className="px-2 py-1 bg-green-50 text-green-600 rounded-lg text-xs font-medium">FR B2</span>
-                        )}
-                      </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {app.hasPassport && (
+                        <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium">Passeport</span>
+                      )}
+                      {app.hasEnglishB2 && (
+                        <span className="px-2 py-1 bg-purple-50 text-purple-600 rounded-lg text-xs font-medium">EN B2</span>
+                      )}
+                      {app.hasFrenchB2 && (
+                        <span className="px-2 py-1 bg-green-50 text-green-600 rounded-lg text-xs font-medium">FR B2</span>
+                      )}
                       <Link
-                        to={`/programs/${app.program.id}`}
+                        to={`/programs/${app.program?.id}`}
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-blue-600"
                         title="Voir le programme"
                       >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
                       </Link>
+                      <button
+                        onClick={() => setExpandedId(expandedId === app.id ? null : app.id)}
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-blue-600"
+                        title={expandedId === app.id ? "Masquer le suivi" : "Voir le suivi"}
+                      >
+                        <svg
+                          className={`w-4 h-4 transition-transform ${expandedId === app.id ? 'rotate-180' : ''}`}
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
-                  {app.additionalNotes && (
-                    <div className="mt-4 pt-4 border-t border-gray-100">
-                      <p className="text-sm text-gray-600 italic line-clamp-2">"{app.additionalNotes}"</p>
-                    </div>
-                  )}
+
+                  {/* Compact timeline always visible */}
+                  <div className="mt-5 pt-4 border-t border-gray-100">
+                    <ApplicationTimeline currentStep={app.applicationStep} variant="light" compact />
+                  </div>
                 </div>
+
+                {/* Expanded vertical timeline */}
+                {expandedId === app.id && (
+                  <div className="border-t border-gray-100 px-6 py-5 bg-gray-50">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-4">Détail du suivi</h4>
+                    <ApplicationTimeline currentStep={app.applicationStep} variant="light" />
+                    {app.additionalNotes && (
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Notes</p>
+                        <p className="text-sm text-gray-600 italic">"{app.additionalNotes}"</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </motion.div>
             ))}
           </div>

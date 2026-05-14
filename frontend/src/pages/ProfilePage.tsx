@@ -50,7 +50,7 @@ const ProfilePage = () => {
 
       try {
         setIsLoading(true);
-        const profileData = await userService.getProfile(user.email);
+        const profileData = await userService.getProfile();
         if (!cancelled) {
           setProfile(profileData);
           setFormData({
@@ -120,7 +120,7 @@ const ProfilePage = () => {
     setSuccess('');
 
     try {
-      const updatedProfile = await userService.updateProfile(profile.email, formData);
+      const updatedProfile = await userService.updateProfile(formData);
       setProfile(updatedProfile);
       
       // Update global context
@@ -140,13 +140,11 @@ const ProfilePage = () => {
   };
 
   const handleDelete = async () => {
-    if (!profile?.email) return;
-
     setIsDeleting(true);
     setError('');
 
     try {
-      await userService.deleteAccount(profile.email);
+      await userService.deleteAccount();
       logout();
       navigate('/');
     } catch (err) {
@@ -172,11 +170,11 @@ const ProfilePage = () => {
   };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0] && profile?.email) {
+    if (e.target.files && e.target.files[0]) {
       try {
         setIsLoading(true);
         const file = e.target.files[0];
-        const result = await userService.uploadAvatar(profile.email, file);
+        const result = await userService.uploadAvatar(file);
         setProfile(prev => prev ? { ...prev, profilePicture: result.profilePicture } : prev);
         
         // Update global context so the Navbar updates instantly

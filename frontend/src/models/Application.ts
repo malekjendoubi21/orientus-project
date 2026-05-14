@@ -6,6 +6,28 @@ export const ApplicationStatus = {
 
 export type ApplicationStatus = typeof ApplicationStatus[keyof typeof ApplicationStatus];
 
+export const ApplicationSource = {
+  DIRECT: 'DIRECT',
+  AGENCY: 'AGENCY',
+} as const;
+
+export type ApplicationSource = typeof ApplicationSource[keyof typeof ApplicationSource];
+
+export const ApplicationStep = {
+  APPLICATION_RECEIVED: 'APPLICATION_RECEIVED',
+  STUDENT_CONTACTED: 'STUDENT_CONTACTED',
+  DOSSIER_IN_PREPARATION: 'DOSSIER_IN_PREPARATION',
+  DOSSIER_READY: 'DOSSIER_READY',
+  UNIVERSITY_CONTACTED: 'UNIVERSITY_CONTACTED',
+  UNIVERSITY_ACCEPTED: 'UNIVERSITY_ACCEPTED',
+  UNIVERSITY_REJECTED: 'UNIVERSITY_REJECTED',
+  VISA_PROCESSING: 'VISA_PROCESSING',
+  VISA_ACCEPTED: 'VISA_ACCEPTED',
+  VISA_REJECTED: 'VISA_REJECTED',
+} as const;
+
+export type ApplicationStep = typeof ApplicationStep[keyof typeof ApplicationStep];
+
 export const BudgetRange = {
   RANGE_0_10K: 'RANGE_0_10K',
   RANGE_10K_20K: 'RANGE_10K_20K',
@@ -27,6 +49,32 @@ export const STATUS_LABELS: Record<string, string> = {
   EN_COURS: 'En cours',
   CONTACTE: 'Contacté',
 };
+
+export const STEP_LABELS: Record<ApplicationStep, string> = {
+  APPLICATION_RECEIVED: 'Candidature reçue',
+  STUDENT_CONTACTED: 'Étudiant contacté',
+  DOSSIER_IN_PREPARATION: 'Dossier en préparation',
+  DOSSIER_READY: 'Dossier préparé',
+  UNIVERSITY_CONTACTED: 'Université contactée',
+  UNIVERSITY_ACCEPTED: 'Accepté par l\'université',
+  UNIVERSITY_REJECTED: 'Refusé par l\'université',
+  VISA_PROCESSING: 'Traitement visa',
+  VISA_ACCEPTED: 'Visa accordé',
+  VISA_REJECTED: 'Visa refusé',
+};
+
+export const STEP_ORDER: ApplicationStep[] = [
+  'APPLICATION_RECEIVED',
+  'STUDENT_CONTACTED',
+  'DOSSIER_IN_PREPARATION',
+  'DOSSIER_READY',
+  'UNIVERSITY_CONTACTED',
+  'UNIVERSITY_ACCEPTED',
+  'UNIVERSITY_REJECTED',
+  'VISA_PROCESSING',
+  'VISA_ACCEPTED',
+  'VISA_REJECTED',
+];
 
 export interface Application {
   id: number;
@@ -53,6 +101,9 @@ export interface Application {
   hasFrenchB2: boolean;
   additionalNotes: string;
   status: ApplicationStatus;
+  source: ApplicationSource;
+  agencyName?: string;
+  applicationStep: ApplicationStep;
   applicationDate: string;
   updatedAt: string;
 }
@@ -63,6 +114,8 @@ export interface ApplicationRequest {
   hasEnglishB2: boolean;
   hasFrenchB2: boolean;
   additionalNotes: string;
+  source?: ApplicationSource;
+  agencyName?: string;
 }
 
 export interface ApplicationsResponse {

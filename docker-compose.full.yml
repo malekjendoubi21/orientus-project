@@ -74,8 +74,9 @@ services:
       dockerfile: Dockerfile
     container_name: orientus-ml
     restart: unless-stopped
-    ports:
-      - "5000:5000"
+    # Pas de mapping de port vers l'hôte : le service ML est accessible
+    # uniquement par le backend via le réseau Docker interne (http://ml:5000).
+    # Le healthcheck utilise localhost INTERNE au conteneur — pas besoin du port exposé.
     volumes:
       - ./ml/models:/app/models
       - ./ml/data:/app/data

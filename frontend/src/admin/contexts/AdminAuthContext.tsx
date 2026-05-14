@@ -16,8 +16,10 @@ interface AdminAuthContextType {
   isLoading: boolean;
   isOwner: boolean;
   isAdmin: boolean;
+  mustChangePassword: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  clearMustChangePassword: () => void;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
@@ -32,6 +34,7 @@ interface AdminAuthProviderProps {
 export const AdminAuthProvider = ({ children }: AdminAuthProviderProps) => {
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   // 🚀 Charger l'admin depuis le localStorage au démarrage
   useEffect(() => {
@@ -46,6 +49,7 @@ export const AdminAuthProvider = ({ children }: AdminAuthProviderProps) => {
           lastName: currentUser.lastName!,
           role: currentUser.role!,
         });
+        setMustChangePassword(!!(currentUser as any).mustChangePassword);
       }
       setIsLoading(false);
     };
@@ -75,6 +79,7 @@ export const AdminAuthProvider = ({ children }: AdminAuthProviderProps) => {
           lastName: response.lastName!,
           role: response.role!,
         });
+        setMustChangePassword(response.mustChangePassword ?? false);
       } else {
         throw new Error(response.message || 'Login failed');
       }
@@ -89,6 +94,14 @@ export const AdminAuthProvider = ({ children }: AdminAuthProviderProps) => {
   const logout = () => {
     authService.logout();
     setAdmin(null);
+    setMustChangePassword(false);
+  };
+
+  /**
+   * Appelé après un changement de mot de passe réussi
+   */
+  const clearMustChangePassword = () => {
+    setMustChangePassword(false);
   };
 
   const value: AdminAuthContextType = {
@@ -97,8 +110,10 @@ export const AdminAuthProvider = ({ children }: AdminAuthProviderProps) => {
     isLoading,
     isOwner: admin?.role?.toUpperCase() === 'OWNER',
     isAdmin: admin?.role?.toUpperCase() === 'ADMIN',
+    mustChangePassword,
     login,
     logout,
+    clearMustChangePassword,
   };
 
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;

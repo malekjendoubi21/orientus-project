@@ -2,6 +2,7 @@ export const UserRole = {
   OWNER: 'OWNER',
   ADMIN: 'ADMIN',
   STUDENT: 'STUDENT',
+  AGENCY_PARTNER: 'AGENCY_PARTNER',
 } as const;
 
 export type UserRole = typeof UserRole[keyof typeof UserRole];
@@ -35,5 +36,6 @@ export interface AuthResponse {
   lastName: string | null;
   role: string | null;
   profilePicture?: string;
+  mustChangePassword?: boolean;
   message: string;
 }

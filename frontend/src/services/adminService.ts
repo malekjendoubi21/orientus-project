@@ -61,14 +61,11 @@ export interface AdminProfileResponse {
 export const adminService = {
   /**
    * 📋 Récupérer la liste des admins (OWNER only)
-   * @param ownerEmail - Email du OWNER
-   * @returns Promise<Admin[]>
+   * ownerEmail n'est plus passé en paramètre — le backend l'extrait du JWT
    */
-  getAdminList: async (ownerEmail: string): Promise<Admin[]> => {
+  getAdminList: async (): Promise<Admin[]> => {
     try {
-      const response = await api.get<Admin[]>('/admin/list', {
-        params: { ownerEmail },
-      });
+      const response = await api.get<Admin[]>('/admin/list');
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -85,15 +82,11 @@ export const adminService = {
 
   /**
    * ➕ Créer un nouvel admin (OWNER only)
-   * @param ownerEmail - Email du OWNER
-   * @param adminData - Données du nouvel admin
-   * @returns Promise<Admin>
+   * ownerEmail n'est plus passé en paramètre — le backend l'extrait du JWT
    */
-  createAdmin: async (ownerEmail: string, adminData: CreateAdminRequest): Promise<Admin> => {
+  createAdmin: async (adminData: CreateAdminRequest): Promise<Admin> => {
     try {
-      const response = await api.post<Admin>('/admin/create', adminData, {
-        params: { ownerEmail },
-      });
+      const response = await api.post<Admin>('/admin/create', adminData);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -110,15 +103,11 @@ export const adminService = {
 
   /**
    * 🗑️ Supprimer un admin (OWNER only)
-   * @param adminId - ID de l'admin à supprimer
-   * @param ownerEmail - Email du OWNER
-   * @returns Promise<{ message: string }>
+   * ownerEmail n'est plus passé en paramètre — le backend l'extrait du JWT
    */
-  deleteAdmin: async (adminId: number, ownerEmail: string): Promise<{ message: string }> => {
+  deleteAdmin: async (adminId: number): Promise<{ message: string }> => {
     try {
-      const response = await api.delete<{ message: string }>(`/admin/${adminId}`, {
-        params: { ownerEmail },
-      });
+      const response = await api.delete<{ message: string }>(`/admin/${adminId}`);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -134,17 +123,12 @@ export const adminService = {
   },
 
   /**
-   * 👤 Récupérer le profil d'un admin
-   * @param email - Email de l'admin
-   * @returns Promise<AdminProfileResponse>
+   * 👤 Récupérer le profil de l'utilisateur connecté
+   * L'email n'est plus passé en paramètre — le backend l'extrait du JWT
    */
-  getAdminProfile: async (email: string): Promise<AdminProfileResponse> => {
+  getAdminProfile: async (): Promise<AdminProfileResponse> => {
     try {
-      const response = await api.get<AdminProfileResponse>(`/users/profile?email=${encodeURIComponent(email)}`, {
-        headers: {
-          'Content-Type': undefined,
-        },
-      });
+      const response = await api.get<AdminProfileResponse>('/users/profile');
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -156,6 +140,68 @@ export const adminService = {
         }
       }
       throw new Error('An unexpected error occurred while fetching profile');
+    }
+  },
+
+  /**
+   * 🏢 Créer un compte agence partenaire (OWNER only)
+   */
+  createAgencyPartner: async (agencyData: CreateAdminRequest): Promise<Admin> => {
+    try {
+      const response = await api.post<Admin>('/auth/agency/create', agencyData);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          throw new Error(error.response.data.message || 'Failed to create agency partner');
+        }
+        if (error.request) {
+          throw new Error('Unable to reach the server. Please check your connection.');
+        }
+      }
+      throw new Error('An unexpected error occurred while creating agency partner');
+    }
+  },
+
+  /**
+   * 🏢 Récupérer la liste des agences partenaires (OWNER only)
+   * ownerEmail n'est plus passé en paramètre — le backend l'extrait du JWT
+   */
+  getAgencyList: async (): Promise<Admin[]> => {
+    try {
+      const response = await api.get<Admin[]>('/admin/agencies');
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          throw new Error(error.response.data.message || 'Failed to fetch agency list');
+        }
+        if (error.request) {
+          throw new Error('Unable to reach the server. Please check your connection.');
+        }
+      }
+      throw new Error('An unexpected error occurred while fetching agency list');
+    }
+  },
+
+  /**
+   * 🗑️ Supprimer une agence partenaire (OWNER only)
+   * ownerEmail n'est plus passé en paramètre — le backend l'extrait du JWT
+   */
+  deleteAgency: async (agencyId: number): Promise<{ message: string }> => {
+    try {
+      const response = await api.delete<{ message: string }>(`/admin/agencies/${agencyId}`);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          throw new Error(error.response.data.message || 'Failed to delete agency partner');
+        }
+        if (error.request) {
+          throw new Error('Unable to reach the server. Please check your connection.');
+        }
+      }
+      throw new Error('An unexpected error occurred while deleting agency partner');
     }
   },
 

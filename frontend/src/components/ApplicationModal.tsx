@@ -32,14 +32,9 @@ const ApplicationModal = ({ program, isOpen, onClose, onSuccess }: ApplicationMo
       return;
     }
 
-    if (!user?.id) {
-      setError('Utilisateur non identifié. Veuillez vous reconnecter.');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
-      await applicationService.createApplication(user.id, program.id, {
+      await applicationService.createApplication(program.id, {
         budgetRange,
         hasPassport,
         hasEnglishB2,

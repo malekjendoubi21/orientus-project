@@ -40,7 +40,7 @@ const AdminDashboard = () => {
       }
 
       try {
-        const adminList = await adminService.getAdminList(admin.email);
+        const adminList = await adminService.getAdminList();
         if (!cancelled) setAdmins(adminList);
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load data');

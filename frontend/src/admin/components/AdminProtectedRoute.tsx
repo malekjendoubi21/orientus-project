@@ -7,10 +7,9 @@ interface AdminProtectedRouteProps {
 }
 
 const AdminProtectedRoute = ({ children, requireOwner = false }: AdminProtectedRouteProps) => {
-  const { isAuthenticated, isLoading, isOwner } = useAdminAuth();
+  const { isAuthenticated, isLoading, isOwner, mustChangePassword } = useAdminAuth();
   const location = useLocation();
 
-  // Show loading while checking auth
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -22,12 +21,15 @@ const AdminProtectedRoute = ({ children, requireOwner = false }: AdminProtectedR
     );
   }
 
-  // Not authenticated - redirect to admin login
   if (!isAuthenticated) {
     return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
 
-  // Requires OWNER but user is not OWNER
+  // Bloquer l'accès au dashboard tant que le mot de passe n'a pas été changé
+  if (mustChangePassword) {
+    return <Navigate to="/admin/set-first-password" replace />;
+  }
+
   if (requireOwner && !isOwner) {
     return <Navigate to="/admin/dashboard" replace />;
   }

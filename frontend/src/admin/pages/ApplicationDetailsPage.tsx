@@ -3,14 +3,21 @@ import { motion } from 'framer-motion';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { applicationService } from '../../services/applicationService';
 import { formatDateTime } from '../../utils/formatters';
-import { ApplicationStatus, BUDGET_LABELS, STATUS_LABELS } from '../../models/Application';
+import { ApplicationSource, ApplicationStep, BUDGET_LABELS, STEP_LABELS } from '../../models/Application';
 import type { Application } from '../../models/Application';
+import ApplicationTimeline from '../../components/ApplicationTimeline';
 
-const statusBadgeStyles: Record<string, string> = {
-  NON_REPONDU: 'bg-red-500/20 text-red-400 border-red-500/30',
-  EN_COURS: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  CONTACTE: 'bg-green-500/20 text-green-400 border-green-500/30',
-};
+const ADVANCE_STEP_OPTIONS: { value: ApplicationStep; label: string }[] = [
+  { value: 'STUDENT_CONTACTED',      label: 'Étudiant contacté' },
+  { value: 'DOSSIER_IN_PREPARATION', label: 'Dossier en préparation' },
+  { value: 'DOSSIER_READY',          label: 'Dossier préparé' },
+  { value: 'UNIVERSITY_CONTACTED',   label: 'Université contactée' },
+  { value: 'UNIVERSITY_ACCEPTED',    label: 'Accepté par l\'université ✅' },
+  { value: 'UNIVERSITY_REJECTED',    label: 'Refusé par l\'université ❌' },
+  { value: 'VISA_PROCESSING',        label: 'Traitement visa' },
+  { value: 'VISA_ACCEPTED',          label: 'Visa accordé ✅' },
+  { value: 'VISA_REJECTED',          label: 'Visa refusé ❌' },
+];
 
 const ApplicationDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -21,6 +28,7 @@ const ApplicationDetailsPage = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [selectedStep, setSelectedStep] = useState<ApplicationStep>('STUDENT_CONTACTED');
 
   useEffect(() => {
     let cancelled = false;
@@ -30,7 +38,14 @@ const ApplicationDetailsPage = () => {
       setError('');
       try {
         const data = await applicationService.getApplicationById(Number(id));
-        if (!cancelled) setApplication(data);
+        if (!cancelled) {
+          setApplication(data);
+          // Pre-select the next logical step
+          const currentIdx = ADVANCE_STEP_OPTIONS.findIndex((o) => o.value === data.applicationStep);
+          if (currentIdx !== -1 && currentIdx < ADVANCE_STEP_OPTIONS.length - 1) {
+            setSelectedStep(ADVANCE_STEP_OPTIONS[currentIdx + 1].value);
+          }
+        }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load application');
       } finally {
@@ -42,16 +57,16 @@ const ApplicationDetailsPage = () => {
     return () => { cancelled = true; };
   }, [id]);
 
-  const handleUpdateStatus = async (status: ApplicationStatus) => {
+  const handleAdvanceStep = async () => {
     if (!application) return;
     setActionLoading(true);
     try {
-      const result = await applicationService.updateApplicationStatus(application.id, status);
+      const result = await applicationService.updateApplicationStep(application.id, selectedStep);
       setApplication(result.application);
-      setSuccessMessage(`Statut mis à jour : ${STATUS_LABELS[status]}`);
+      setSuccessMessage(`Étape mise à jour : ${STEP_LABELS[selectedStep]}`);
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update status');
+      setError(err instanceof Error ? err.message : 'Failed to update step');
     } finally {
       setActionLoading(false);
     }
@@ -94,7 +109,7 @@ const ApplicationDetailsPage = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <h3 className="text-lg font-semibold text-white mb-2">Candidature introuvable</h3>
-        <p className="text-slate-400 mb-6">{error || 'Cette candidature n\'existe pas.'}</p>
+        <p className="text-slate-400 mb-6">{error || "Cette candidature n'existe pas."}</p>
         <Link
           to="/admin/applications"
           className="inline-flex items-center px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
@@ -123,13 +138,24 @@ const ApplicationDetailsPage = () => {
             <p className="text-slate-400 text-sm mt-0.5">#{application.id} — {formatDateTime(application.applicationDate)}</p>
           </div>
         </div>
-        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border ${statusBadgeStyles[application.status]}`}>
-          <span className={`w-2 h-2 rounded-full ${
-            application.status === 'NON_REPONDU' ? 'bg-red-400' :
-            application.status === 'EN_COURS' ? 'bg-orange-400' : 'bg-green-400'
-          }`} />
-          {STATUS_LABELS[application.status]}
-        </span>
+        {/* Source badge */}
+        <div className="flex items-center gap-3">
+          {application.source === ApplicationSource.AGENCY ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Via Agence{application.agencyName ? ` — ${application.agencyName}` : ''}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Candidature Directe
+            </span>
+          )}
+        </div>
       </motion.div>
 
       {/* Success Message */}
@@ -185,15 +211,15 @@ const ApplicationDetailsPage = () => {
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="bg-slate-700/30 rounded-lg p-4">
                 <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Programme</p>
-                <p className="text-white font-medium">{application.program.title}</p>
+                <p className="text-white font-medium">{application.program?.title}</p>
               </div>
               <div className="bg-slate-700/30 rounded-lg p-4">
                 <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Université</p>
-                <p className="text-white font-medium">{application.program.university}</p>
+                <p className="text-white font-medium">{application.program?.university}</p>
               </div>
               <div className="bg-slate-700/30 rounded-lg p-4 sm:col-span-2">
                 <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Pays</p>
-                <p className="text-white font-medium">{application.program.country}</p>
+                <p className="text-white font-medium">{application.program?.country}</p>
               </div>
             </div>
           </motion.div>
@@ -212,48 +238,26 @@ const ApplicationDetailsPage = () => {
                 <p className="text-white font-semibold text-lg">{BUDGET_LABELS[application.budgetRange]}</p>
               </div>
               <div className="grid grid-cols-3 gap-4">
-                <div className={`rounded-lg p-4 text-center ${application.hasPassport ? 'bg-green-500/10 border border-green-500/20' : 'bg-slate-700/30'}`}>
-                  <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${application.hasPassport ? 'bg-green-500/20' : 'bg-slate-600/50'}`}>
-                    {application.hasPassport ? (
-                      <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    ) : (
-                      <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    )}
+                {[
+                  { flag: application.hasPassport, label: 'Passeport' },
+                  { flag: application.hasEnglishB2, label: 'Anglais B2' },
+                  { flag: application.hasFrenchB2, label: 'Français B2' },
+                ].map(({ flag, label }) => (
+                  <div key={label} className={`rounded-lg p-4 text-center ${flag ? 'bg-green-500/10 border border-green-500/20' : 'bg-slate-700/30'}`}>
+                    <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${flag ? 'bg-green-500/20' : 'bg-slate-600/50'}`}>
+                      {flag ? (
+                        <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      )}
+                    </div>
+                    <p className={`text-sm font-medium ${flag ? 'text-green-400' : 'text-slate-500'}`}>{label}</p>
                   </div>
-                  <p className={`text-sm font-medium ${application.hasPassport ? 'text-green-400' : 'text-slate-500'}`}>Passeport</p>
-                </div>
-                <div className={`rounded-lg p-4 text-center ${application.hasEnglishB2 ? 'bg-green-500/10 border border-green-500/20' : 'bg-slate-700/30'}`}>
-                  <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${application.hasEnglishB2 ? 'bg-green-500/20' : 'bg-slate-600/50'}`}>
-                    {application.hasEnglishB2 ? (
-                      <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    ) : (
-                      <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    )}
-                  </div>
-                  <p className={`text-sm font-medium ${application.hasEnglishB2 ? 'text-green-400' : 'text-slate-500'}`}>Anglais B2</p>
-                </div>
-                <div className={`rounded-lg p-4 text-center ${application.hasFrenchB2 ? 'bg-green-500/10 border border-green-500/20' : 'bg-slate-700/30'}`}>
-                  <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${application.hasFrenchB2 ? 'bg-green-500/20' : 'bg-slate-600/50'}`}>
-                    {application.hasFrenchB2 ? (
-                      <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    ) : (
-                      <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    )}
-                  </div>
-                  <p className={`text-sm font-medium ${application.hasFrenchB2 ? 'text-green-400' : 'text-slate-500'}`}>Français B2</p>
-                </div>
+                ))}
               </div>
             </div>
           </motion.div>
@@ -272,49 +276,67 @@ const ApplicationDetailsPage = () => {
           )}
         </div>
 
-        {/* Sidebar - Actions */}
+        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Status Management */}
+          {/* Advance Step Block */}
           <motion.div variants={itemVariants} className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-            <h2 className="text-lg font-semibold text-white mb-4">Actions</h2>
+            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+              Avancer le statut
+            </h2>
             <div className="space-y-3">
-              {application.status !== ApplicationStatus.EN_COURS && (
-                <button
-                  onClick={() => handleUpdateStatus(ApplicationStatus.EN_COURS)}
-                  disabled={actionLoading}
-                  className="w-full py-2.5 px-4 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Marquer EN_COURS
-                </button>
-              )}
-              {application.status !== ApplicationStatus.CONTACTE && (
-                <button
-                  onClick={() => handleUpdateStatus(ApplicationStatus.CONTACTE)}
-                  disabled={actionLoading}
-                  className="w-full py-2.5 px-4 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
+              <select
+                value={selectedStep}
+                onChange={(e) => setSelectedStep(e.target.value as ApplicationStep)}
+                className="w-full px-3 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors"
+              >
+                {ADVANCE_STEP_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <button
+                onClick={handleAdvanceStep}
+                disabled={actionLoading || selectedStep === application.applicationStep}
+                className="w-full py-2.5 px-4 bg-violet-600 text-white font-medium rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {actionLoading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  Marquer CONTACTE
-                </button>
-              )}
+                )}
+                Valider
+              </button>
+            </div>
+          </motion.div>
 
-              <div className="border-t border-slate-700 pt-3">
-                <a
-                  href={`mailto:${application.studentEmail}?subject=Votre candidature - ${application.program.title}`}
-                  className="w-full py-2.5 px-4 bg-violet-600 text-white font-medium rounded-lg hover:bg-violet-700 transition-colors flex items-center justify-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  Envoyer un email
-                </a>
-              </div>
+          {/* Timeline */}
+          <motion.div variants={itemVariants} className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+            <h2 className="text-lg font-semibold text-white mb-5 flex items-center gap-2">
+              <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              Timeline
+            </h2>
+            <ApplicationTimeline currentStep={application.applicationStep} variant="dark" />
+          </motion.div>
 
+          {/* Actions */}
+          <motion.div variants={itemVariants} className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+            <h2 className="text-lg font-semibold text-white mb-4">Actions</h2>
+            <div className="space-y-3">
+              <a
+                href={`mailto:${application.studentEmail}?subject=Votre candidature - ${application.program?.title}`}
+                className="w-full py-2.5 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Envoyer un email
+              </a>
               <div className="border-t border-slate-700 pt-3">
                 <button
                   onClick={() => setDeleteConfirm(true)}
@@ -327,32 +349,6 @@ const ApplicationDetailsPage = () => {
                   Supprimer la candidature
                 </button>
               </div>
-            </div>
-          </motion.div>
-
-          {/* Timeline */}
-          <motion.div variants={itemVariants} className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-            <h2 className="text-lg font-semibold text-white mb-4">Historique</h2>
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-violet-500 mt-2 flex-shrink-0" />
-                <div>
-                  <p className="text-sm text-white">Candidature soumise</p>
-                  <p className="text-xs text-slate-400">{formatDateTime(application.applicationDate)}</p>
-                </div>
-              </div>
-              {application.updatedAt && application.updatedAt !== application.applicationDate && (
-                <div className="flex items-start gap-3">
-                  <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                    application.status === 'CONTACTE' ? 'bg-green-500' :
-                    application.status === 'EN_COURS' ? 'bg-orange-500' : 'bg-slate-500'
-                  }`} />
-                  <div>
-                    <p className="text-sm text-white">Dernière mise à jour</p>
-                    <p className="text-xs text-slate-400">{formatDateTime(application.updatedAt)}</p>
-                  </div>
-                </div>
-              )}
             </div>
           </motion.div>
         </div>

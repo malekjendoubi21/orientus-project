@@ -6,14 +6,25 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Intercepteur requête : ajouter le JWT (sauf sur les endpoints d'auth publics)
+// Endpoints publics qui ne nécessitent PAS de token
+const PUBLIC_AUTH_PATHS = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/verify',
+  '/auth/resend-code',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/test',
+];
+
+// Intercepteur requête : ajouter le JWT sauf pour les endpoints publics
 api.interceptors.request.use((config) => {
-  if (config.url?.startsWith('/auth/')) {
-    return config;
-  }
-  const token = localStorage.getItem(TOKEN_KEY);
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const isPublic = PUBLIC_AUTH_PATHS.some((path) => config.url === path);
+  if (!isPublic) {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return config;
 });

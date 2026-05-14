@@ -46,7 +46,8 @@ public class AuthController {
         User user = authService.getUserByEmail(request.getEmail());
         LoginResponse response = new LoginResponse(
                 token, user.getId(), user.getEmail(), user.getFirstName(),
-                user.getLastName(), user.getRole().name(), user.getProfilePicture(), "Login successful"
+                user.getLastName(), user.getRole().name(), user.getProfilePicture(),
+                user.isMustChangePassword(), "Login successful"
         );
         return ResponseEntity.ok(response);
     }
@@ -60,6 +61,19 @@ public class AuthController {
         AuthResponse response = new AuthResponse(
                 user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(),
                 user.getRole().name(), user.getProfilePicture(), "Admin created successfully"
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * POST /api/auth/agency/create — Protected by OWNER role via SecurityConfig
+     */
+    @PostMapping("/agency/create")
+    public ResponseEntity<AuthResponse> createAgencyPartner(@Valid @RequestBody RegisterRequest request) {
+        User user = userService.createAgencyPartner(request);
+        AuthResponse response = new AuthResponse(
+                user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(),
+                user.getRole().name(), user.getProfilePicture(), "Agency partner account created successfully"
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

@@ -2,6 +2,7 @@ package com.example.orientus.repository;
 
 import com.example.orientus.entity.Application;
 import com.example.orientus.entity.User;
+import com.example.orientus.enums.ApplicationSource;
 import com.example.orientus.enums.ApplicationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +34,15 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
 
     // Vérifier si un étudiant a déjà postulé pour un programme
     boolean existsByStudentIdAndProgramId(Long studentId, Long programId);
+
+    // Trouver les candidatures par source (DIRECT ou AGENCY)
+    Page<Application> findBySource(ApplicationSource source, Pageable pageable);
+
+    // Trouver les candidatures par source et statut
+    Page<Application> findBySourceAndStatus(ApplicationSource source, ApplicationStatus status, Pageable pageable);
+
+    // Trouver les candidatures par nom d'agence
+    Page<Application> findByAgencyName(String agencyName, Pageable pageable);
 
     // Trouver les candidatures récentes (optionnel)
     List<Application> findTop10ByOrderByApplicationDateDesc();

@@ -34,6 +34,9 @@ public class LoginResponse {
     // 🖼️ Image de profil
     private String profilePicture;
 
+    // 🔑 Indique si l'utilisateur doit changer son mot de passe à la première connexion
+    private boolean mustChangePassword;
+
     // 💬 Message de confirmation
     private String message;
 }

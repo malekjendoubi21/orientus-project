@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -24,10 +25,12 @@ public class AdminController {
     private final AdminService adminService;
 
     /**
-     * GET /api/admin/list?ownerEmail=xxx
+     * GET /api/admin/list
+     * ownerEmail extrait du JWT — seul l'OWNER authentifié peut lister les admins
      */
     @GetMapping("/list")
-    public ResponseEntity<?> getAllAdmins(@RequestParam String ownerEmail) {
+    public ResponseEntity<?> getAllAdmins(Authentication authentication) {
+        String ownerEmail = ((com.example.orientus.entity.User) authentication.getPrincipal()).getEmail();
         if (!adminService.isOwner(ownerEmail)) {
             throw new RuntimeException("Only OWNER can view admin list");
         }
@@ -51,13 +54,15 @@ public class AdminController {
     }
 
     /**
-     * POST /api/admin/create?ownerEmail=xxx
+     * POST /api/admin/create
+     * ownerEmail extrait du JWT — seul l'OWNER authentifié peut créer un admin
      */
     @PostMapping("/create")
     public ResponseEntity<?> createAdmin(
-            @RequestParam String ownerEmail,
+            Authentication authentication,
             @Valid @RequestBody RegisterRequest request
     ) {
+        String ownerEmail = ((User) authentication.getPrincipal()).getEmail();
         User admin = adminService.createAdmin(ownerEmail, request);
 
         Map<String, Object> response = new HashMap<>();
@@ -74,10 +79,12 @@ public class AdminController {
     }
 
     /**
-     * DELETE /api/admin/{adminId}?ownerEmail=xxx
+     * DELETE /api/admin/{adminId}
+     * ownerEmail extrait du JWT — seul l'OWNER authentifié peut supprimer un admin
      */
     @DeleteMapping("/{adminId}")
-    public ResponseEntity<?> deleteAdmin(@PathVariable Long adminId, @RequestParam String ownerEmail) {
+    public ResponseEntity<?> deleteAdmin(@PathVariable Long adminId, Authentication authentication) {
+        String ownerEmail = ((User) authentication.getPrincipal()).getEmail();
         adminService.deleteAdmin(ownerEmail, adminId);
         return ResponseEntity.ok(Map.of("message", "Admin deleted successfully"));
     }
@@ -114,5 +121,42 @@ public class AdminController {
     public ResponseEntity<?> getStudentCount() {
         long count = adminService.getStudentCount();
         return ResponseEntity.ok(Map.of("count", count));
+    }
+
+    /**
+     * GET /api/admin/agencies
+     * ownerEmail extrait du JWT — seul l'OWNER authentifié peut lister les agences
+     */
+    @GetMapping("/agencies")
+    public ResponseEntity<?> getAllAgencies(Authentication authentication) {
+        String ownerEmail = ((User) authentication.getPrincipal()).getEmail();
+        if (!adminService.isOwner(ownerEmail)) {
+            throw new RuntimeException("Only OWNER can view agency list");
+        }
+        List<User> agencies = adminService.getAllAgencies();
+        List<Map<String, Object>> response = agencies.stream().map(agency -> {
+            Map<String, Object> data = new HashMap<>();
+            data.put("id", agency.getId());
+            data.put("email", agency.getEmail());
+            data.put("firstName", agency.getFirstName());
+            data.put("lastName", agency.getLastName());
+            data.put("phone", agency.getPhone());
+            data.put("nationality", agency.getNationality());
+            data.put("role", agency.getRole().name());
+            data.put("createdAt", agency.getCreatedAt());
+            return data;
+        }).toList();
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * DELETE /api/admin/agencies/{agencyId}
+     * ownerEmail extrait du JWT — seul l'OWNER authentifié peut supprimer une agence
+     */
+    @DeleteMapping("/agencies/{agencyId}")
+    public ResponseEntity<?> deleteAgency(@PathVariable Long agencyId, Authentication authentication) {
+        String ownerEmail = ((User) authentication.getPrincipal()).getEmail();
+        adminService.deleteAgency(ownerEmail, agencyId);
+        return ResponseEntity.ok(Map.of("message", "Agency partner deleted successfully"));
     }
 }

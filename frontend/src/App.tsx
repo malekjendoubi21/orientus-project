@@ -1,9 +1,11 @@
 import React, { Suspense, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { GraduationCap } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { AdminAuthProvider } from './admin/contexts/AdminAuthContext';
+import { AgencyAuthProvider } from './agency/contexts/AgencyAuthContext';
+import { useAuth } from './contexts/AuthContext';
 import ScrollToTop from './components/ScrollToTop';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -11,6 +13,8 @@ import ChatWidget from './components/ChatWidget';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './admin/components/AdminLayout';
 import AdminProtectedRoute from './admin/components/AdminProtectedRoute';
+import AgencyProtectedRoute from './agency/components/AgencyProtectedRoute';
+import AgencyLayout from './agency/components/AgencyLayout';
 import { programService } from './services/programService';
 
 // Lazy-loaded pages
@@ -28,8 +32,15 @@ const MessagesPage = React.lazy(() => import('./pages/MessagesPage'));
 const ForgotPasswordPage = React.lazy(() => import('./pages/ForgotPasswordPage'));
 const ResetPasswordPage = React.lazy(() => import('./pages/ResetPasswordPage'));
 
+// Lazy-loaded agency pages
+const AgencyLoginPage = React.lazy(() => import('./agency/pages/AgencyLoginPage'));
+const AgencyApplicationsPage = React.lazy(() => import('./agency/pages/AgencyApplicationsPage'));
+const AgencySubmitPage = React.lazy(() => import('./agency/pages/AgencySubmitPage'));
+const AgencySetFirstPasswordPage = React.lazy(() => import('./agency/pages/AgencySetFirstPasswordPage'));
+
 // Lazy-loaded admin pages
 const AdminLoginPage = React.lazy(() => import('./admin/pages/AdminLoginPage'));
+const AdminSetFirstPasswordPage = React.lazy(() => import('./admin/pages/AdminSetFirstPasswordPage'));
 const AdminDashboard = React.lazy(() => import('./admin/pages/AdminDashboard'));
 const AdminProfilePage = React.lazy(() => import('./admin/pages/AdminProfilePage'));
 const AdminManagementPage = React.lazy(() => import('./admin/pages/AdminManagementPage'));
@@ -49,7 +60,7 @@ function YellowBanner() {
   };
 
   // Don't show banner on auth pages or admin pages
-  if (location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/verify-email' || location.pathname === '/forgot-password' || location.pathname === '/reset-password' || location.pathname.startsWith('/admin')) {
+  if (location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/verify-email' || location.pathname === '/forgot-password' || location.pathname === '/reset-password' || location.pathname.startsWith('/admin') || location.pathname.startsWith('/agency')) {
     return null;
   }
 
@@ -67,11 +78,40 @@ function YellowBanner() {
   );
 }
 
+/**
+ * Redirige automatiquement les utilisateurs authentifiés avec un rôle non-STUDENT
+ * hors du site étudiant (localhost/) vers leur espace dédié.
+ *
+ * - ADMIN / OWNER      → /admin/dashboard
+ * - AGENCY_PARTNER     → /agency/applications
+ *
+ * Les pages publiques (login, register, verify-email…) restent accessibles à tous.
+ * Les étudiants non vérifiés et les visiteurs anonymes ne sont pas redirigés.
+ */
+function RoleBasedRedirect() {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
+
+  const publicPaths = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password'];
+  const isPublicPath = publicPaths.some(p => location.pathname === p);
+
+  if (isLoading || !isAuthenticated || isPublicPath) return null;
+
+  if (user?.role === 'ADMIN' || user?.role === 'OWNER') {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+  if (user?.role === 'AGENCY_PARTNER') {
+    return <Navigate to="/agency/applications" replace />;
+  }
+
+  return null;
+}
+
 function ChatWidgetWrapper() {
   const location = useLocation();
 
-  // Ne pas afficher le widget sur les pages admin
-  if (location.pathname.startsWith('/admin')) {
+  // Ne pas afficher le widget sur les pages admin ou agence
+  if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/agency')) {
     return null;
   }
 
@@ -122,6 +162,7 @@ function App() {
     <Router>
       <AuthProvider>
         <AdminAuthProvider>
+          <AgencyAuthProvider>
           <ScrollToTop />
           <BackendWarmup />
           <Suspense fallback={
@@ -130,8 +171,24 @@ function App() {
             </div>
           }>
             <Routes>
+            {/* Agency Routes */}
+            <Route path="/agency/login" element={<AgencyLoginPage />} />
+            <Route path="/agency/set-first-password" element={<AgencySetFirstPasswordPage />} />
+            <Route
+              path="/agency"
+              element={
+                <AgencyProtectedRoute>
+                  <AgencyLayout />
+                </AgencyProtectedRoute>
+              }
+            >
+              <Route path="applications" element={<AgencyApplicationsPage />} />
+              <Route path="submit" element={<AgencySubmitPage />} />
+            </Route>
+
             {/* Admin Routes - Separate from public site */}
             <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route path="/admin/set-first-password" element={<AdminSetFirstPasswordPage />} />
             <Route
               path="/admin"
               element={
@@ -163,6 +220,8 @@ function App() {
               path="/*"
               element={
                 <div className="min-h-screen">
+                  {/* Redirige ADMIN/OWNER/AGENCY_PARTNER hors du site étudiant */}
+                  <RoleBasedRedirect />
                   <Navbar />
                   <YellowBanner />
                   <Routes>
@@ -195,6 +254,7 @@ function App() {
             />
           </Routes>
           </Suspense>
+          </AgencyAuthProvider>
         </AdminAuthProvider>
       </AuthProvider>
     </Router>

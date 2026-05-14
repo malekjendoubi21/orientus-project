@@ -1,7 +1,7 @@
 import axios from 'axios';
 import api from './api';
 import type { Application, ApplicationRequest, ApplicationsResponse, ApplicationStats } from '../models/Application';
-import type { ApplicationStatus } from '../models/Application';
+import type { ApplicationSource, ApplicationStatus, ApplicationStep } from '../models/Application';
 
 // Normalize paginated response from Spring Boot (content/totalElements) or custom (applications/totalItems)
 function normalizeApplicationsResponse(data: Record<string, unknown>): ApplicationsResponse {
@@ -16,15 +16,15 @@ function normalizeApplicationsResponse(data: Record<string, unknown>): Applicati
 export const applicationService = {
   /**
    * Submit a new application
+   * studentId n'est plus passé — le backend l'extrait du JWT
    */
   createApplication: async (
-    studentId: number,
     programId: number,
     data: ApplicationRequest
   ): Promise<{ message: string; application: Application }> => {
     try {
       const response = await api.post('/applications', data, {
-        params: { studentId, programId },
+        params: { programId },
       });
       return response.data;
     } catch (error) {
@@ -41,16 +41,18 @@ export const applicationService = {
   },
 
   /**
-   * Get all applications with pagination and optional status filter
+   * Get all applications with pagination, optional status and source filters
    */
   getApplications: async (
     page: number = 0,
     size: number = 10,
-    status?: ApplicationStatus
+    status?: ApplicationStatus,
+    source?: ApplicationSource
   ): Promise<ApplicationsResponse> => {
     try {
       const params: Record<string, string | number> = { page, size };
       if (status) params.status = status;
+      if (source) params.source = source;
 
       const response = await api.get('/applications', { params });
       return normalizeApplicationsResponse(response.data);
@@ -155,6 +157,84 @@ export const applicationService = {
         }
       }
       throw new Error('An unexpected error occurred while deleting application');
+    }
+  },
+
+  /**
+   * Update application step (timeline) — Admin only
+   */
+  updateApplicationStep: async (
+    id: number,
+    step: ApplicationStep
+  ): Promise<{ message: string; application: Application }> => {
+    try {
+      const response = await api.put(`/applications/${id}/step`, null, {
+        params: { step },
+      });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          throw new Error(error.response.data.message || 'Failed to update application step');
+        }
+        if (error.request) {
+          throw new Error('Unable to reach the server. Please check your connection.');
+        }
+      }
+      throw new Error('An unexpected error occurred while updating application step');
+    }
+  },
+
+  /**
+   * Submit an application via agency
+   */
+  submitAgencyApplication: async (
+    studentId: number,
+    programId: number,
+    agencyName: string,
+    data: ApplicationRequest
+  ): Promise<{ message: string; application: Application }> => {
+    try {
+      const response = await api.post('/agency/applications', data, {
+        params: { studentId, programId, agencyName },
+      });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          throw new Error(error.response.data.message || 'Failed to submit agency application');
+        }
+        if (error.request) {
+          throw new Error('Unable to reach the server. Please check your connection.');
+        }
+      }
+      throw new Error('An unexpected error occurred while submitting agency application');
+    }
+  },
+
+  /**
+   * Get all applications for an agency
+   */
+  getAgencyApplications: async (
+    agencyName: string,
+    page: number = 0,
+    size: number = 10
+  ): Promise<ApplicationsResponse> => {
+    try {
+      const response = await api.get('/agency/applications', {
+        params: { agencyName, page, size },
+      });
+      return normalizeApplicationsResponse(response.data);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          throw new Error(error.response.data.message || 'Failed to fetch agency applications');
+        }
+        if (error.request) {
+          throw new Error('Unable to reach the server. Please check your connection.');
+        }
+      }
+      throw new Error('An unexpected error occurred while fetching agency applications');
     }
   },
 

@@ -35,18 +35,12 @@ export interface ProfileResponse {
  */
 export const userService = {
   /**
-   * 👤 Récupérer le profil de l'utilisateur
-   * @param email - Email de l'utilisateur
-   * @returns Promise<ProfileResponse>
+   * 👤 Récupérer le profil de l'utilisateur connecté
+   * L'email n'est plus passé en paramètre — le backend l'extrait du JWT
    */
-  getProfile: async (email: string): Promise<ProfileResponse> => {
+  getProfile: async (): Promise<ProfileResponse> => {
     try {
-      // GET request without Content-Type header (no body)
-      const response = await api.get<ProfileResponse>(`/users/profile?email=${encodeURIComponent(email)}`, {
-        headers: {
-          'Content-Type': undefined,
-        },
-      });
+      const response = await api.get<ProfileResponse>('/users/profile');
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -62,12 +56,11 @@ export const userService = {
   },
 
   /**
-   * ✏️ Mettre à jour le profil de l'utilisateur
-   * @param email - Email actuel de l'utilisateur
-   * @param profileData - Nouvelles données du profil
-   * @returns Promise<ProfileResponse>
+   * ✏️ Mettre à jour le profil de l'utilisateur connecté
+   * L'email courant n'est plus passé en paramètre URL — le backend l'extrait du JWT
+   * @param profileData - Nouvelles données du profil (peut contenir un nouvel email dans le body)
    */
-  updateProfile: async (email: string, profileData: UpdateProfileRequest): Promise<ProfileResponse> => {
+  updateProfile: async (profileData: UpdateProfileRequest): Promise<ProfileResponse> => {
     try {
       // Build request object without password first
       const requestBody: Partial<UpdateProfileRequest> = {
@@ -83,9 +76,7 @@ export const userService = {
         requestBody.password = profileData.password;
       }
 
-      const response = await api.put<ProfileResponse>('/users/profile', requestBody, {
-        params: { email },
-      });
+      const response = await api.put<ProfileResponse>('/users/profile', requestBody);
 
       // Mettre à jour le localStorage avec les nouvelles infos
       if (response.data) {
@@ -115,17 +106,12 @@ export const userService = {
   },
 
   /**
-   * 🗑️ Supprimer le compte de l'utilisateur
-   * @param email - Email de l'utilisateur
-   * @returns Promise<{ message: string }>
+   * 🗑️ Supprimer le compte de l'utilisateur connecté
+   * L'email n'est plus passé en paramètre — le backend l'extrait du JWT
    */
-  deleteAccount: async (email: string): Promise<{ message: string }> => {
+  deleteAccount: async (): Promise<{ message: string }> => {
     try {
-      const response = await api.delete<{ message: string }>(`/users/profile?email=${encodeURIComponent(email)}`, {
-        headers: {
-          'Content-Type': undefined,
-        },
-      });
+      const response = await api.delete<{ message: string }>('/users/profile');
 
       // Nettoyer le localStorage après suppression
       localStorage.removeItem(TOKEN_KEY);
@@ -147,13 +133,13 @@ export const userService = {
 
   /**
    * 🖼️ Uploader un avatar
+   * L'email n'est plus passé en paramètre — le backend l'extrait du JWT
    */
-  uploadAvatar: async (email: string, file: File): Promise<{ message: string; profilePicture: string }> => {
+  uploadAvatar: async (file: File): Promise<{ message: string; profilePicture: string }> => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const response = await api.post<{ message: string; profilePicture: string }>(`/users/profile/avatar`, formData, {
-        params: { email },
+      const response = await api.post<{ message: string; profilePicture: string }>('/users/profile/avatar', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

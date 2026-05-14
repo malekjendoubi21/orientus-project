@@ -4,6 +4,8 @@ import com.example.orientus.dto.RegisterRequest;
 import com.example.orientus.dto.UpdateProfileRequest;
 import com.example.orientus.entity.User;
 import com.example.orientus.enums.UserRole;
+import com.example.orientus.exception.ConflictException;
+import com.example.orientus.exception.ResourceNotFoundException;
 import com.example.orientus.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,9 +38,8 @@ public class UserService {
      * Génère un code de vérification et envoie un email
      */
     public User registerStudent(RegisterRequest request) {
-        // Vérifier si l'email existe déjà
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new ConflictException("Email already exists");
         }
 
         // Générer un code de vérification à 6 chiffres
@@ -80,7 +81,7 @@ public class UserService {
      */
     public User createAdmin(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new ConflictException("Email already exists");
         }
 
         User user = new User();
@@ -100,11 +101,36 @@ public class UserService {
     }
 
     /**
+     * Créer un compte agence partenaire (OWNER only)
+     */
+    public User createAgencyPartner(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new ConflictException("Email already exists");
+        }
+
+        User user = new User();
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setPhone(request.getPhone());
+        user.setNationality(request.getNationality());
+
+        user.setRole(UserRole.AGENCY_PARTNER);
+        user.setVerified(true);
+        user.setCreatedAt(LocalDateTime.now());
+        // Oblige le changement de mot de passe à la première connexion
+        user.setMustChangePassword(true);
+
+        return userRepository.save(user);
+    }
+
+    /**
      * Trouver un utilisateur par email
      */
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -126,14 +152,12 @@ public class UserService {
      * @return L'utilisateur modifié
      */
     public User updateProfile(String email, UpdateProfileRequest request) {
-        // 1. Récupérer l'utilisateur
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // 2. Vérifier si le nouvel email existe déjà (si l'email a changé)
         if (!user.getEmail().equals(request.getEmail())) {
             if (userRepository.existsByEmail(request.getEmail())) {
-                throw new RuntimeException("Email already exists");
+                throw new ConflictException("Email already exists");
             }
         }
 
@@ -165,7 +189,7 @@ public class UserService {
      */
     public User updateProfilePicture(String email, org.springframework.web.multipart.MultipartFile file) throws java.io.IOException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         
         String uploadDir = "uploads/avatars/";
         java.io.File directory = new java.io.File(uploadDir);
@@ -182,13 +206,33 @@ public class UserService {
     }
 
     /**
+     * Définir le nouveau mot de passe lors de la première connexion.
+     * Réinitialise mustChangePassword à false.
+     */
+    public void setFirstPassword(String email, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!user.isMustChangePassword()) {
+            throw new RuntimeException("Password change not required for this account");
+        }
+
+        if (newPassword == null || newPassword.trim().length() < 8) {
+            throw new RuntimeException("Password must be at least 8 characters");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(false);
+        userRepository.save(user);
+    }
+
+    /**
      * Supprimer un utilisateur par son email
      * @param email Email de l'utilisateur à supprimer
      */
     public void deleteUser(String email) {
-        // Récupérer l'utilisateur
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         // Supprimer l'utilisateur
         userRepository.delete(user);
@@ -205,7 +249,7 @@ public class UserService {
      */
     public void verifyEmail(String email, String code) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         // Vérifier si déjà vérifié
         if (user.isVerified()) {
@@ -237,7 +281,7 @@ public class UserService {
      */
     public void resendVerificationCode(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         // Vérifier si déjà vérifié
         if (user.isVerified()) {

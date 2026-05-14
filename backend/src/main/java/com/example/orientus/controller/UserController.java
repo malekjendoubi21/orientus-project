@@ -1,11 +1,13 @@
 package com.example.orientus.controller;
 
+import com.example.orientus.dto.FirstPasswordRequest;
 import com.example.orientus.dto.UpdateProfileRequest;
 import com.example.orientus.entity.User;
 import com.example.orientus.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -23,13 +25,12 @@ public class UserController {
 
 
     /**
-     * GET /api/users/profile?email=xxx
-     * Récupérer le profil de l'utilisateur connecté
+     * GET /api/users/profile
+     * Récupérer le profil de l'utilisateur connecté (email extrait du JWT)
      */
     @GetMapping("/profile")
-    public ResponseEntity<?> getProfile(@RequestParam String email) {
-        User user = userService.getUserByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public ResponseEntity<?> getProfile(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
 
         Map<String, Object> response = new HashMap<>();
         response.put("id", user.getId());
@@ -47,14 +48,15 @@ public class UserController {
 
 
     /**
-     * PUT /api/users/profile?email=xxx
-     * Mettre à jour le profil de l'utilisateur connecté
+     * PUT /api/users/profile
+     * Mettre à jour le profil de l'utilisateur connecté (email extrait du JWT)
      */
     @PutMapping("/profile")
     public ResponseEntity<?> updateProfile(
-            @RequestParam String email,
+            Authentication authentication,
             @Valid @RequestBody UpdateProfileRequest request
     ) {
+        String email = ((User) authentication.getPrincipal()).getEmail();
         User updatedUser = userService.updateProfile(email, request);
 
         Map<String, Object> response = new HashMap<>();
@@ -73,24 +75,40 @@ public class UserController {
 
 
     /**
-     * DELETE /api/users/profile?email=xxx
-     * Supprimer le compte de l'utilisateur connecté
+     * DELETE /api/users/profile
+     * Supprimer le compte de l'utilisateur connecté (email extrait du JWT)
      */
     @DeleteMapping("/profile")
-    public ResponseEntity<?> deleteAccount(@RequestParam String email) {
+    public ResponseEntity<?> deleteAccount(Authentication authentication) {
+        String email = ((User) authentication.getPrincipal()).getEmail();
         userService.deleteUser(email);
         return ResponseEntity.ok(Map.of("message", "Account deleted successfully"));
     }
 
     /**
-     * POST /api/users/profile/avatar?email=xxx
-     * Upload an avatar
+     * POST /api/users/first-password
+     * Définir un nouveau mot de passe à la première connexion.
+     * Accessible dès qu'on est authentifié (même si mustChangePassword = true).
+     */
+    @PostMapping("/first-password")
+    public ResponseEntity<?> setFirstPassword(
+            Authentication authentication,
+            @RequestBody FirstPasswordRequest request) {
+        String email = ((User) authentication.getPrincipal()).getEmail();
+        userService.setFirstPassword(email, request.getNewPassword());
+        return ResponseEntity.ok(Map.of("message", "Password updated successfully. Please log in again."));
+    }
+
+    /**
+     * POST /api/users/profile/avatar
+     * Upload an avatar (email extrait du JWT)
      */
     @PostMapping("/profile/avatar")
     public ResponseEntity<?> uploadAvatar(
-            @RequestParam String email,
+            Authentication authentication,
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
         try {
+            String email = ((User) authentication.getPrincipal()).getEmail();
             User updatedUser = userService.updateProfilePicture(email, file);
             return ResponseEntity.ok(Map.of(
                 "message", "Profile picture updated successfully",

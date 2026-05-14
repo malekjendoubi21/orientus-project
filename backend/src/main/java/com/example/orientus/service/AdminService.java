@@ -3,6 +3,9 @@ package com.example.orientus.service;
 import com.example.orientus.dto.RegisterRequest;
 import com.example.orientus.entity.User;
 import com.example.orientus.enums.UserRole;
+import com.example.orientus.exception.ConflictException;
+import com.example.orientus.exception.ForbiddenException;
+import com.example.orientus.exception.ResourceNotFoundException;
 import com.example.orientus.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -27,17 +30,15 @@ public class AdminService {
      * @return Le nouvel admin créé
      */
     public User createAdmin(String ownerEmail, RegisterRequest request) {
-        // 1. Vérifier que l'utilisateur qui fait la requête est un OWNER
         User owner = userRepository.findByEmail(ownerEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (owner.getRole() != UserRole.OWNER) {
-            throw new RuntimeException("Only OWNER can create admins");
+            throw new ForbiddenException("Only OWNER can create admins");
         }
 
-        // 2. Vérifier si l'email existe déjà
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new ConflictException("Email already exists");
         }
 
         User admin = new User();
@@ -48,7 +49,10 @@ public class AdminService {
         admin.setPhone(request.getPhone());
         admin.setNationality(request.getNationality());
         admin.setRole(UserRole.ADMIN);
+        admin.setVerified(true);
         admin.setCreatedAt(LocalDateTime.now());
+        // Oblige le changement de mot de passe à la première connexion
+        admin.setMustChangePassword(true);
 
         return userRepository.save(admin);
     }
@@ -59,21 +63,18 @@ public class AdminService {
      * @param adminId ID de l'admin à supprimer
      */
     public void deleteAdmin(String ownerEmail, Long adminId) {
-        // 1. Vérifier que l'utilisateur qui fait la requête est un OWNER
         User owner = userRepository.findByEmail(ownerEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (owner.getRole() != UserRole.OWNER) {
-            throw new RuntimeException("Only OWNER can delete admins");
+            throw new ForbiddenException("Only OWNER can delete admins");
         }
 
-        // 2. Récupérer l'admin à supprimer
         User admin = userRepository.findById(adminId)
-                .orElseThrow(() -> new RuntimeException("Admin not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Admin not found"));
 
-        // 3. Vérifier que c'est bien un ADMIN (pas un OWNER ou STUDENT)
         if (admin.getRole() != UserRole.ADMIN) {
-            throw new RuntimeException("Can only delete ADMIN users");
+            throw new ForbiddenException("Can only delete ADMIN users");
         }
 
         // 4. Supprimer l'admin
@@ -113,5 +114,29 @@ public class AdminService {
      */
     public long getStudentCount() {
         return userRepository.countByRole(UserRole.STUDENT);
+    }
+
+    /**
+     * Liste de tous les partenaires agence
+     */
+    public List<User> getAllAgencies() {
+        return userRepository.findByRole(UserRole.AGENCY_PARTNER);
+    }
+
+    /**
+     * Supprimer un partenaire agence (OWNER uniquement)
+     */
+    public void deleteAgency(String ownerEmail, Long agencyId) {
+        User owner = userRepository.findByEmail(ownerEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (owner.getRole() != UserRole.OWNER) {
+            throw new ForbiddenException("Only OWNER can delete agency partners");
+        }
+        User agency = userRepository.findById(agencyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Agency partner not found"));
+        if (agency.getRole() != UserRole.AGENCY_PARTNER) {
+            throw new ForbiddenException("Can only delete AGENCY_PARTNER users");
+        }
+        userRepository.delete(agency);
     }
 }

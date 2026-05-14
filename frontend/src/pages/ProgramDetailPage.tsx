@@ -10,9 +10,10 @@ import ApplicationModal from '../components/ApplicationModal';
 const ProgramDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [showRoleError, setShowRoleError] = useState(false);
   const [applicationSuccess, setApplicationSuccess] = useState(false);
 
   // React Query for program details with caching
@@ -30,6 +31,12 @@ const ProgramDetailPage = () => {
   const handleApplyClick = () => {
     if (!isAuthenticated) {
       setShowLoginPrompt(true);
+      return;
+    }
+    // Seul un compte STUDENT peut soumettre une candidature directe.
+    // ADMIN, OWNER et AGENCY_PARTNER doivent utiliser leur propre espace.
+    if (user?.role !== 'STUDENT') {
+      setShowRoleError(true);
       return;
     }
     setShowApplicationModal(true);
@@ -405,6 +412,35 @@ const ProgramDetailPage = () => {
       )}
 
       {/* Login Prompt Modal */}
+      {/* Modale : rôle non autorisé à postuler */}
+      {showRoleError && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowRoleError(false)} />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center"
+          >
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Accès réservé aux étudiants</h3>
+            <p className="text-gray-600 mb-6">
+              Votre compte ({user?.role}) ne peut pas soumettre de candidature depuis cet espace.
+              Les agences doivent utiliser l'espace dédié.
+            </p>
+            <button
+              onClick={() => setShowRoleError(false)}
+              className="px-6 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-lg"
+            >
+              Compris
+            </button>
+          </motion.div>
+        </div>
+      )}
+
       {showLoginPrompt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowLoginPrompt(false)} />

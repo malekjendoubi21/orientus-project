@@ -3,7 +3,11 @@ package com.example.orientus.service;
 import com.example.orientus.entity.Application;
 import com.example.orientus.entity.Program;
 import com.example.orientus.entity.User;
+import com.example.orientus.enums.ApplicationSource;
 import com.example.orientus.enums.ApplicationStatus;
+import com.example.orientus.enums.ApplicationStep;
+import com.example.orientus.exception.ConflictException;
+import com.example.orientus.exception.ResourceNotFoundException;
 import com.example.orientus.repository.ApplicationRepository;
 import com.example.orientus.repository.ProgramRepository;
 import com.example.orientus.repository.UserRepository;
@@ -26,17 +30,14 @@ public class ApplicationService {
      * Créer une nouvelle candidature
      */
     public Application createApplication(Application application, Long studentId, Long programId) {
-        // Vérifier que l'étudiant existe
         User student = userRepository.findById(studentId)
-                .orElseThrow(() -> new RuntimeException("Student not found with id: " + studentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
 
-        // Vérifier que le programme existe
         Program program = programRepository.findById(programId)
-                .orElseThrow(() -> new RuntimeException("Program not found with id: " + programId));
+                .orElseThrow(() -> new ResourceNotFoundException("Program not found with id: " + programId));
 
-        // Vérifier si l'étudiant a déjà postulé pour ce programme
         if (applicationRepository.existsByStudentIdAndProgramId(studentId, programId)) {
-            throw new RuntimeException("You have already applied to this program");
+            throw new ConflictException("You have already applied to this program");
         }
 
         // Associer l'étudiant et le programme
@@ -73,7 +74,7 @@ public class ApplicationService {
      */
     public Application getApplicationById(Long id) {
         return applicationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Application not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Application not found with id: " + id));
     }
 
     /**
@@ -81,6 +82,20 @@ public class ApplicationService {
      */
     public Page<Application> getApplicationsByStatus(ApplicationStatus status, Pageable pageable) {
         return applicationRepository.findByStatus(status, pageable);
+    }
+
+    /**
+     * Récupérer les candidatures par source (DIRECT ou AGENCY)
+     */
+    public Page<Application> getApplicationsBySource(ApplicationSource source, Pageable pageable) {
+        return applicationRepository.findBySource(source, pageable);
+    }
+
+    /**
+     * Récupérer les candidatures par source et statut
+     */
+    public Page<Application> getApplicationsBySourceAndStatus(ApplicationSource source, ApplicationStatus status, Pageable pageable) {
+        return applicationRepository.findBySourceAndStatus(source, status, pageable);
     }
 
     /**
@@ -105,6 +120,15 @@ public class ApplicationService {
     public void deleteApplication(Long id) {
         Application application = getApplicationById(id);
         applicationRepository.delete(application);
+    }
+
+    /**
+     * Avancer l'étape du timeline (ADMIN)
+     */
+    public Application updateApplicationStep(Long id, ApplicationStep step) {
+        Application application = getApplicationById(id);
+        application.setApplicationStep(step);
+        return applicationRepository.save(application);
     }
 
     /**
