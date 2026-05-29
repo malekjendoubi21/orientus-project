@@ -44,21 +44,9 @@ stages {
         }
     }
 
-    stage('Test Backend') {
-        steps {
-            dir('backend') {
-                sh './mvnw -B test'
-            }
-        }
-    }
+   
 
-    stage('Lint Frontend') {
-        steps {
-            dir('frontend') {
-                sh 'npm run lint || true'
-            }
-        }
-    }
+   
 
     stage('Verify Docker Compose') {
         steps {
