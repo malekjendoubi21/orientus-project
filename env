@@ -16,12 +16,11 @@ MAIL_USERNAME=nader.bmimoun@gmail.com
 MAIL_PASSWORD=gqotkzzmvwyowotv
 
 # ── Groq AI API ───────────────────────────────────────────
-GROQ_API_KEY=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
-
+GROQ_API_KEY=sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  
 # ── Frontend URLs ─────────────────────────────────────────
 VITE_API_URL=http://localhost:8084/api
 VITE_WS_URL=http://localhost:8084/ws
 FRONTEND_URL=http://localhost:5173
 
 # ── Google Maps ───────────────────────────────────────────
-VITE_GOOGLE_MAPS_API_KEY=AIzaSyC4-c0bZdcf0nLoUip_f-WFcZvukwEA4uA
+VITE_GOOGLE_MAPS_API_KEY=
