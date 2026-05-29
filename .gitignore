@@ -2,11 +2,7 @@
 # Orientus — Root .gitignore
 # =============================================================
 
-# ── Secrets (NEVER commit these!) ────────────────────────
-.env
-*.env.local
-application.properties
-!application.properties.example
+
 
 # ── Node / Frontend ───────────────────────────────────────
 node_modules/

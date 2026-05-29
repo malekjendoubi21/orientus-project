@@ -10,7 +10,7 @@ WORKDIR /app
 
 # Cache dependencies layer
 COPY package.json package-lock.json ./
-RUN npm ci --frozen-lockfile
+RUN npm ci
 
 # Accept build-time environment variables
 ARG VITE_API_URL

@@ -41,7 +41,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=5 \
 
 ENTRYPOINT ["java", \
   "-Djava.security.egd=file:/dev/./urandom", \
-  "-Dspring.datasource.url=${SPRING_DATASOURCE_URL}", \
-  "-Dspring.datasource.username=${SPRING_DATASOURCE_USERNAME}", \
-  "-Dspring.datasource.password=${SPRING_DATASOURCE_PASSWORD}", \
   "-jar", "app.jar"]

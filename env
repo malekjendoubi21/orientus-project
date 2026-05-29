@@ -1,0 +1,27 @@
+# =============================================================
+# Orientus — Environment Variables
+# =============================================================
+
+# ── PostgreSQL ────────────────────────────────────────────
+POSTGRES_DB=orientus_db
+POSTGRES_USER=orientus_user
+POSTGRES_PASSWORD=orientus_pass
+
+# ── JWT ───────────────────────────────────────────────────
+JWT_SECRET=OrientusSecretKeyForJWTMustBeLongEnoughForHS512Algorithm2024SecureKey!
+JWT_EXPIRATION=86400000
+
+# ── Email SMTP ────────────────────────────────────────────
+MAIL_USERNAME=nader.bmimoun@gmail.com
+MAIL_PASSWORD=gqotkzzmvwyowotv
+
+# ── Groq AI API ───────────────────────────────────────────
+GROQ_API_KEY=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
+
+# ── Frontend URLs ─────────────────────────────────────────
+VITE_API_URL=http://localhost:8084/api
+VITE_WS_URL=http://localhost:8084/ws
+FRONTEND_URL=http://localhost:5173
+
+# ── Google Maps ───────────────────────────────────────────
+VITE_GOOGLE_MAPS_API_KEY=AIzaSyC4-c0bZdcf0nLoUip_f-WFcZvukwEA4uA
