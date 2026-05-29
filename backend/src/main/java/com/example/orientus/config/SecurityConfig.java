@@ -3,7 +3,6 @@ package com.example.orientus.config;
 import com.example.orientus.security.JwtAuthenticationFilter;
 import com.example.orientus.security.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -25,9 +24,6 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RateLimitFilter rateLimitFilter;
-
-    @Value("${app.frontend.url:http://localhost:5173}")
-    private String frontendUrl;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -88,12 +84,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // Allow dev server, Docker Nginx (port 80), and any configured frontend URL
-        config.setAllowedOrigins(List.of(
-            "http://localhost:5173",
-            "http://localhost",
-            "http://localhost:80",
-            frontendUrl
+        // Allow any http/https origin (any port)
+        config.setAllowedOriginPatterns(List.of(
+            "http://*",
+            "https://*"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));

@@ -74,11 +74,9 @@ stages {
 
     stage('Deploy') {
         steps {
-
-            sshagent(credentials: [env.SSH_CREDENTIALS_ID]) {
-
+            withCredentials([sshUserPrivateKey(credentialsId: env.SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                 sh """
-                ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} << 'EOF'
+                ssh -i "\$SSH_KEY" -o StrictHostKeyChecking=no "\$SSH_USER@${DEPLOY_HOST}" << 'EOF'
 
                 set -e
 
