@@ -1,6 +1,10 @@
 pipeline {
 agent any
 
+parameters {
+    booleanParam(name: 'LOCAL_DOCKER_BUILD', defaultValue: false, description: 'Build images on the Jenkins agent (requires Docker access).')
+}
+
 options {
     timestamps()
 }
@@ -55,6 +59,9 @@ stages {
     }
 
     stage('Docker Build') {
+        when {
+            expression { return params.LOCAL_DOCKER_BUILD }
+        }
         steps {
 
             sh 'docker build -t orientus-backend:latest ./backend'
