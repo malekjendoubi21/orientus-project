@@ -1,7 +1,6 @@
 pipeline {
 agent any
 
-```
 options {
     timestamps()
 }
@@ -131,6 +130,4 @@ post {
         cleanWs()
     }
 }
-```
-
 }
