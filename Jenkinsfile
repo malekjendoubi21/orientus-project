@@ -10,15 +10,6 @@ options {
 }
 
 environment {
-    DEPLOY_HOST = '152.239.113.215'
-    DEPLOY_USER = 'ubuntu'
-    DEPLOY_DIR = '/opt/orientus'
-    DEPLOY_BRANCH = 'main'
-
-    REPO_URL = 'https://github.com/malekjendoubi21/orientus-project.git'
-
-    SSH_CREDENTIALS_ID = 'orientus-ssh'
-
     DOCKER_BUILDKIT = '1'
 }
 
@@ -74,37 +65,11 @@ stages {
 
     stage('Deploy') {
         steps {
-            withCredentials([sshUserPrivateKey(credentialsId: env.SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
-                sh """
-                ssh -i "\$SSH_KEY" -o StrictHostKeyChecking=no "\$SSH_USER@${DEPLOY_HOST}" << 'EOF'
-
-                set -e
-
-                if [ ! -d "${DEPLOY_DIR}/.git" ]; then
-                    git clone "${REPO_URL}" "${DEPLOY_DIR}"
-                fi
-
-                cd "${DEPLOY_DIR}"
-
-                git fetch --all
-
-                git checkout ${DEPLOY_BRANCH}
-
-                git pull origin ${DEPLOY_BRANCH}
-
-                docker compose down
-
-                docker compose up -d --build --remove-orphans
-
-                docker image prune -af
-
-                docker system prune -f
-
-                docker ps
-
-                EOF
-                """
-            }
+            sh 'docker compose down'
+            sh 'docker compose up -d --build --remove-orphans'
+            sh 'docker image prune -af'
+            sh 'docker system prune -f'
+            sh 'docker ps'
         }
     }
 }
