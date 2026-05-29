@@ -16,7 +16,7 @@ MAIL_USERNAME=nader.bmimoun@gmail.com
 MAIL_PASSWORD=gqotkzzmvwyowotv
 
 # ── Groq AI API ───────────────────────────────────────────
-GROQ_API_KEY=sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  
+GROQ_API_KEY=
 # ── Frontend URLs ─────────────────────────────────────────
 VITE_API_URL=http://localhost:8084/api
 VITE_WS_URL=http://localhost:8084/ws
